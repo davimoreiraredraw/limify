@@ -1,0 +1,34 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1744617850337,
+      "tag": "0000_thick_mac_gargan",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1744862702815,
+      "tag": "0001_bizarre_rawhide_kid",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1746704554030,
+      "tag": "0002_fair_naoko",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1747412209402,
+      "tag": "0003_tense_sunfire",
+      "breakpoints": true
+    }
+  ]
+}
