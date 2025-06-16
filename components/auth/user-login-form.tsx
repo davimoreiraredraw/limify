@@ -43,6 +43,8 @@ export function UserLoginForm() {
     try {
       setIsLoading(true);
       await signIn(values.email, values.password);
+    } catch (error) {
+      form.reset({ email: values.email, password: "" });
     } finally {
       setIsLoading(false);
     }

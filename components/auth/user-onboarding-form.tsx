@@ -246,6 +246,7 @@ const acquisitionChannels = [
   { label: "Google", value: "google" },
   { label: "Indicação", value: "indicacao" },
   { label: "Youtube", value: "youtube" },
+  { label: "Influencer", value: "influencer" },
   { label: "Outros", value: "outros" },
 ];
 
@@ -267,6 +268,8 @@ const step3Schema = z.object({
   acquisitionChannel: z.string({
     required_error: "Por favor, selecione como nos conheceu.",
   }),
+  otherAcquisitionChannel: z.string().optional().or(z.literal("")),
+  influencerName: z.string().optional().or(z.literal("")),
   termsAccepted: z.boolean().refine((val) => val === true, {
     message: "Você precisa aceitar os termos de uso.",
   }),
@@ -281,6 +284,8 @@ interface FormData {
   profession: string;
   otherProfession: string;
   acquisitionChannel: string;
+  otherAcquisitionChannel: string;
+  influencerName: string;
   termsAccepted: boolean;
 }
 
@@ -288,11 +293,14 @@ export function UserOnboardingForm({
   isGoogleOrFacebookLogin,
 }: UserOnboardingFormProps) {
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     country: "BR",
     profession: "",
     otherProfession: "",
     acquisitionChannel: "",
+    otherAcquisitionChannel: "",
+    influencerName: "",
     termsAccepted: false,
   });
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -339,6 +347,8 @@ export function UserOnboardingForm({
     resolver: zodResolver(step3Schema),
     defaultValues: {
       acquisitionChannel: formData.acquisitionChannel,
+      otherAcquisitionChannel: formData.otherAcquisitionChannel,
+      influencerName: formData.influencerName,
       termsAccepted: formData.termsAccepted,
     },
   });
@@ -400,10 +410,13 @@ export function UserOnboardingForm({
 
   const handleStep3Submit = async (values: z.infer<typeof step3Schema>) => {
     try {
+      setIsLoading(true);
       // Atualizar dados do formulário
       const finalFormData = {
         ...formData,
         acquisitionChannel: values.acquisitionChannel,
+        otherAcquisitionChannel: values.otherAcquisitionChannel || "",
+        influencerName: values.influencerName || "",
         termsAccepted: values.termsAccepted,
       };
 
@@ -424,6 +437,9 @@ export function UserOnboardingForm({
           profession: finalFormData.profession,
           other_profession: finalFormData.otherProfession || "",
           acquisition_channel: finalFormData.acquisitionChannel,
+          other_acquisition_channel:
+            finalFormData.otherAcquisitionChannel || "",
+          influencer_name: finalFormData.influencerName || "",
           terms_accepted: finalFormData.termsAccepted,
           onboarding_completed: true,
         },
@@ -441,6 +457,8 @@ export function UserOnboardingForm({
       toast.error("Erro ao finalizar onboarding", {
         description: error.message || "Tente novamente mais tarde",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -463,53 +481,54 @@ export function UserOnboardingForm({
   };
 
   return (
-    <div className="flex min-h-screen">
-      {/* Lado esquerdo - Formulário */}
-      <div className="w-full md:w-1/2 flex flex-col p-8 md:p-12">
-        <div className="mb-8">
-          <div className="mb-4">
-            {/* Logo do Limify */}
-            <div className="h-8 mb-8">
-              <Image
-                src="/logo.png"
-                alt="Limify"
-                width={120}
-                height={40}
-                priority
-              />
-            </div>
-
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">
-              {stepInfo[step as keyof typeof stepInfo].title}
-            </h2>
-            <p className="text-sm text-gray-500">
-              {stepInfo[step as keyof typeof stepInfo].description}
-            </p>
+    <div className="w-full flex flex-col h-screen p-8 md:p-12">
+      {/* Cabeçalho */}
+      <div className="flex-none">
+        <div className="mb-4">
+          {/* Logo do Limify */}
+          <div className="h-8 mb-8">
+            <Image
+              src="/logo.png"
+              alt="Limify"
+              width={120}
+              height={40}
+              priority
+            />
           </div>
 
-          {/* Barra de progresso */}
-          <div className="flex items-center gap-2 mb-6">
-            <div className="text-sm text-gray-500">Etapas</div>
-            <div className="flex-1 bg-gray-200 h-2 rounded-full">
-              <div
-                className="h-2 bg-blue-600 rounded-full transition-all duration-300"
-                style={{
-                  width: `${(step / 3) * 100}%`,
-                }}
-              ></div>
-            </div>
-            <div className="text-sm text-gray-500">{step} de 3</div>
-          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">
+            {stepInfo[step as keyof typeof stepInfo].title}
+          </h2>
+          <p className="text-sm text-gray-500">
+            {stepInfo[step as keyof typeof stepInfo].description}
+          </p>
         </div>
 
+        {/* Barra de progresso */}
+        <div className="flex items-center gap-2 mb-6">
+          <div className="text-sm text-gray-500">Etapas</div>
+          <div className="flex-1 bg-gray-200 h-2 rounded-full">
+            <div
+              className="h-2 bg-blue-600 rounded-full transition-all duration-300"
+              style={{
+                width: `${(step / 3) * 100}%`,
+              }}
+            ></div>
+          </div>
+          <div className="text-sm text-gray-500">{step} de 3</div>
+        </div>
+      </div>
+
+      {/* Conteúdo do formulário - área que pode rolar se necessário */}
+      <div className="flex-1 overflow-y-auto">
         {/* Etapa 1 - País */}
         {step === 1 && (
           <Form {...step1Form}>
             <form
               onSubmit={step1Form.handleSubmit(handleStep1Submit)}
-              className="space-y-6"
+              className="h-full flex flex-col"
             >
-              <div className="space-y-4">
+              <div className="flex-1">
                 <FormField
                   control={step1Form.control}
                   name="country"
@@ -542,12 +561,14 @@ export function UserOnboardingForm({
                 />
               </div>
 
-              <Button
-                type="submit"
-                className="w-full h-12 text-base font-medium rounded-lg bg-blue-600 hover:bg-blue-700"
-              >
-                Próximo
-              </Button>
+              <div className="flex-none mt-auto pt-6">
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base font-medium rounded-lg bg-blue-600 hover:bg-blue-700"
+                >
+                  Próximo
+                </Button>
+              </div>
             </form>
           </Form>
         )}
@@ -557,9 +578,9 @@ export function UserOnboardingForm({
           <Form {...step2Form}>
             <form
               onSubmit={step2Form.handleSubmit(handleStep2Submit)}
-              className="space-y-6"
+              className="h-full flex flex-col"
             >
-              <div className="space-y-4">
+              <div className="flex-1">
                 <FormField
                   control={step2Form.control}
                   name="profession"
@@ -612,21 +633,23 @@ export function UserOnboardingForm({
                 )}
               </div>
 
-              <div className="flex gap-4 mt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={prevStep}
-                  className="w-full h-12 rounded-lg border-blue-600 text-blue-600 hover:bg-blue-50"
-                >
-                  Voltar
-                </Button>
-                <Button
-                  type="submit"
-                  className="w-full h-12 text-base font-medium rounded-lg bg-blue-600 hover:bg-blue-700"
-                >
-                  Próximo
-                </Button>
+              <div className="flex-none mt-auto pt-6">
+                <div className="flex gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={prevStep}
+                    className="w-full h-12 rounded-lg border-blue-600 text-blue-600 hover:bg-blue-50"
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="w-full h-12 text-base font-medium rounded-lg bg-blue-600 hover:bg-blue-700"
+                  >
+                    Próximo
+                  </Button>
+                </div>
               </div>
             </form>
           </Form>
@@ -637,9 +660,9 @@ export function UserOnboardingForm({
           <Form {...step3Form}>
             <form
               onSubmit={step3Form.handleSubmit(handleStep3Submit)}
-              className="space-y-6"
+              className="h-full flex flex-col"
             >
-              <div className="space-y-4">
+              <div className="flex-1">
                 <FormField
                   control={step3Form.control}
                   name="acquisitionChannel"
@@ -671,11 +694,51 @@ export function UserOnboardingForm({
                   )}
                 />
 
+                {step3Form.watch("acquisitionChannel") === "outros" && (
+                  <FormField
+                    control={step3Form.control}
+                    name="otherAcquisitionChannel"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Especifique como nos conheceu</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Digite como nos conheceu"
+                            className="h-12 rounded-lg"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {step3Form.watch("acquisitionChannel") === "influencer" && (
+                  <FormField
+                    control={step3Form.control}
+                    name="influencerName"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Nome do Influencer</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Digite o nome do influencer"
+                            className="h-12 rounded-lg"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 <FormField
                   control={step3Form.control}
                   name="termsAccepted"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 py-2">
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 py-4">
                       <FormControl>
                         <Checkbox
                           checked={field.value}
@@ -700,59 +763,29 @@ export function UserOnboardingForm({
                 />
               </div>
 
-              <div className="flex gap-4 mt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={prevStep}
-                  className="w-full h-12 rounded-lg border-blue-600 text-blue-600 hover:bg-blue-50"
-                >
-                  Voltar
-                </Button>
-                <Button
-                  type="submit"
-                  className="w-full h-12 text-base font-medium rounded-lg bg-blue-600 hover:bg-blue-700"
-                >
-                  Concluir
-                </Button>
+              <div className="flex-none mt-auto pt-6">
+                <div className="flex gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={prevStep}
+                    disabled={isLoading}
+                    className="w-full h-12 rounded-lg border-blue-600 text-blue-600 hover:bg-blue-50"
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-12 text-base font-medium rounded-lg bg-blue-600 hover:bg-blue-700"
+                  >
+                    {isLoading ? "Concluindo..." : "Concluir"}
+                  </Button>
+                </div>
               </div>
             </form>
           </Form>
         )}
-      </div>
-
-      {/* Lado direito - Imagem e descrição */}
-      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-50 to-blue-100 flex-col items-center justify-center p-12 relative">
-        <div className="max-w-md text-center mb-8">
-          {/* Placeholder para a imagem do carrossel */}
-          <div className="relative w-80 h-60 mx-auto mb-6 rounded-lg overflow-hidden shadow-lg">
-            {/* Aqui virá a imagem real quando você tiver as imagens */}
-            <div className="absolute inset-0 bg-gray-300 flex items-center justify-center">
-              <span className="text-gray-500">Imagem de exemplo</span>
-            </div>
-          </div>
-
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">
-            Descreva. Veja acontecer.
-          </h3>
-          <p className="text-gray-600">
-            O Limify transforma sua ideia escrita em imagens realistas ou
-            conceituais.
-          </p>
-        </div>
-
-        {/* Indicadores do carrossel */}
-        <div className="flex space-x-2 mt-4">
-          {carouselImages.map((_, index) => (
-            <button
-              key={index}
-              className={`w-2 h-2 rounded-full ${
-                index === activeImageIndex ? "bg-blue-600" : "bg-gray-300"
-              }`}
-              onClick={() => setActiveImageIndex(index)}
-            />
-          ))}
-        </div>
       </div>
     </div>
   );

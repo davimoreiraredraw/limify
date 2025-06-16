@@ -1,18 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Metadata } from "next";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { formatCurrency } from "@/app/lib/expenses";
 import SquareMeterBudgetForm from "@/components/orcamentos/SquareMeterBudgetForm";
-
-export const metadata: Metadata = {
-  title: "Orçamentos",
-  description: "Gerencie seus orçamentos",
-};
 
 interface SearchParams {
   [key: string]: string | string[] | undefined;

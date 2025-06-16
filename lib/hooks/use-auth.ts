@@ -75,13 +75,25 @@ export function useAuth() {
 
   async function signIn(email: string, password: string) {
     try {
-      console.log("signIn", email, password);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      console.log("data", data);
+
       if (error) {
+        // Verificar o tipo de erro e mostrar mensagem apropriada
+        if (error.message === "Invalid login credentials") {
+          toast.error("Email ou senha incorretos", {
+            description:
+              "Por favor, verifique suas credenciais e tente novamente.",
+          });
+          throw error;
+        }
+
+        // Para outros tipos de erro
+        toast.error("Erro ao fazer login", {
+          description: "Tente novamente mais tarde",
+        });
         throw error;
       }
 
@@ -115,10 +127,7 @@ export function useAuth() {
         window.location.href = "/dashboard";
       }
     } catch (error: any) {
-      console.error("Erro completo:", error);
-      toast.error("Erro ao fazer login", {
-        description: error?.message || "Tente novamente mais tarde",
-      });
+      // Não mostrar toast aqui pois já tratamos os erros específicos acima
       throw error;
     }
   }
