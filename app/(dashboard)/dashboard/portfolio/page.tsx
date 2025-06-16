@@ -95,7 +95,11 @@ export default function PortfolioPage() {
       <section className="bg-white rounded-xl p-6 mb-6 flex flex-col gap-4 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <span className="font-semibold text-base">Logo</span>
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shadow-sm border border-input"
+          >
             <Pencil2Icon className="w-5 h-5" />
           </Button>
         </div>
@@ -139,7 +143,11 @@ export default function PortfolioPage() {
       <section className="bg-white rounded-xl p-6 flex flex-col gap-4 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <span className="font-semibold text-base">Rodapé</span>
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shadow-sm border border-input"
+          >
             <Pencil2Icon className="w-5 h-5" />
           </Button>
         </div>

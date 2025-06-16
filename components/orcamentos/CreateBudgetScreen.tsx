@@ -89,11 +89,34 @@ export default function CreateBudgetScreen({
           </div>
         </div>
       ) : (
-        <BudgetFormSteps
-          budgetStep={budgetStep}
-          setBudgetStep={setBudgetStep}
-          selectedBudgetType={selectedBudgetType}
-        />
+        <div className="w-full">
+          {/* Barra de progresso */}
+          <div className="mb-8 max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold mb-1">Orçamentos</h2>
+            <div className="flex justify-between items-center">
+              <div className="flex-1">
+                <div className="w-full h-1 bg-gray-200 rounded-full">
+                  <div
+                    className="h-1 bg-indigo-600 rounded-full"
+                    style={{
+                      width: `${(budgetStep / 4) * 100}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+              <div className="ml-4 text-sm font-medium text-gray-600">
+                Etapa {budgetStep} de 4
+              </div>
+            </div>
+          </div>
+
+          {/* Formulário do orçamento */}
+          <BudgetFormSteps
+            budgetStep={budgetStep}
+            setBudgetStep={setBudgetStep}
+            selectedBudgetType={selectedBudgetType}
+          />
+        </div>
       )}
     </div>
   );

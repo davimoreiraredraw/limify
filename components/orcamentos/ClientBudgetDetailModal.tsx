@@ -188,18 +188,22 @@ export default function ClientBudgetDetailModal({
         </div>
 
         <div className="flex justify-between items-center p-6 border-t bg-gray-50">
-          <Button variant="outline" onClick={onClose}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="bg-white shadow-sm hover:bg-gray-100"
+          >
             Fechar
           </Button>
           <div className="flex gap-2">
             <Button
               variant="outline"
-              className="text-red-600 border-red-300 hover:bg-red-50"
+              className="text-red-600 border-red-300 hover:bg-red-50 bg-white shadow-sm"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Excluir
             </Button>
-            <Button className="bg-indigo-600 text-white hover:bg-indigo-700">
+            <Button className="bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
               <Pencil className="h-4 w-4 mr-2" />
               Editar
             </Button>

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { UserLoginForm } from "@/components/auth/user-login-form";
 import { UserRegisterForm } from "@/components/auth/user-register-form";
 import { useState } from "react";
-
+import LoginLogo from "@/public/limify_login_logo.png";
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
 
@@ -16,13 +16,12 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="flex items-center space-x-2">
             <Image
-              src="/logo.png"
+              src={LoginLogo}
               alt="Limify"
-              width={40}
-              height={40}
-              className="w-10 h-10"
+              width={150}
+              height={50}
+              className="h-auto w-[150px] object-contain"
             />
-            <span className="text-2xl font-semibold">Limify</span>
           </div>
 
           {/* Título */}

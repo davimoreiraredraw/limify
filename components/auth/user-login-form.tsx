@@ -79,7 +79,7 @@ export function UserLoginForm() {
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
-                    placeholder="Crie uma senha agora"
+                    placeholder="Digite sua senha"
                     {...field}
                     className="h-12 pr-10"
                     disabled={isLoading}

@@ -8,12 +8,19 @@ import { useState } from "react";
 import { Budget, Column } from "@/app/(dashboard)/dashboard/orcamentos/types";
 import BudgetCard from "./BudgetCard";
 
+// Interface para o orçamento que pode ter price ou total
+interface BudgetWithTotal extends Budget {
+  total?: number;
+  name?: string;
+  client_name?: string;
+}
+
 interface BudgetKanbanProps {
   columns: Record<string, Column>;
   setColumns: React.Dispatch<React.SetStateAction<Record<string, Column>>>;
   columnOrder: string[];
-  budgets: Budget[];
-  setBudgets: React.Dispatch<React.SetStateAction<Budget[]>>;
+  budgets: BudgetWithTotal[];
+  setBudgets: React.Dispatch<React.SetStateAction<BudgetWithTotal[]>>;
   isLoading: boolean;
 }
 
@@ -57,13 +64,35 @@ export default function BudgetKanban({
       return;
     }
 
+    // Verificar se as colunas existem
+    if (!columns[source.droppableId] || !columns[destination.droppableId]) {
+      console.error("Coluna de origem ou destino não encontrada");
+      return;
+    }
+
     // Obter coluna de origem e destino
     const startColumn = columns[source.droppableId];
     const finishColumn = columns[destination.droppableId];
 
     // Obter o orçamento que está sendo arrastado
     const draggedBudget = budgets.find((b) => b.id === draggableId);
-    if (!draggedBudget) return;
+    if (!draggedBudget) {
+      console.error(`Orçamento com ID ${draggableId} não encontrado`);
+      return;
+    }
+
+    // Verificar se o orçamento tem a propriedade price ou total
+    let budgetValue = 0;
+    if (typeof draggedBudget.price === "number") {
+      budgetValue = draggedBudget.price;
+    } else if (typeof draggedBudget.total === "number") {
+      budgetValue = draggedBudget.total;
+    } else {
+      console.error(
+        `Orçamento com ID ${draggableId} não tem um valor válido`,
+        draggedBudget
+      );
+    }
 
     // Se for na mesma coluna
     if (startColumn === finishColumn) {
@@ -93,7 +122,7 @@ export default function BudgetKanban({
       ...startColumn,
       budgetIds: startBudgetIds,
       count: startColumn.count - 1,
-      totalValue: (startColumn.totalValue || 0) - draggedBudget.price,
+      totalValue: (startColumn.totalValue || 0) - budgetValue,
     };
 
     const finishBudgetIds = Array.from(finishColumn.budgetIds);
@@ -104,32 +133,48 @@ export default function BudgetKanban({
       ...finishColumn,
       budgetIds: finishBudgetIds,
       count: finishColumn.count + 1,
-      totalValue: (finishColumn.totalValue || 0) + draggedBudget.price,
+      totalValue: (finishColumn.totalValue || 0) + budgetValue,
     };
 
-    // Atualizar o budget com a nova coluna
-    const updatedBudgets = budgets.map((budget) => {
-      if (budget.id === draggableId) {
-        return {
-          ...budget,
-          column: destination.droppableId as Budget["column"],
-        };
-      }
-      return budget;
-    });
+    try {
+      // Atualizar o budget com a nova coluna
+      const updatedBudgets = budgets.map((budget) => {
+        if (budget.id === draggableId) {
+          // Manter todas as propriedades originais e apenas atualizar a coluna
+          return {
+            ...budget,
+            column: destination.droppableId as Budget["column"],
+            // Garantir que as propriedades importantes são mantidas
+            project: budget.project || budget.name || "",
+            client: budget.client || budget.client_name || "",
+            name: budget.name, // Manter o nome original
+            client_name: budget.client_name, // Manter o nome do cliente original
+          };
+        }
+        return budget;
+      });
 
-    setBudgets(updatedBudgets);
+      // Log para debug
+      console.log(
+        "Orçamento atualizado:",
+        updatedBudgets.find((b) => b.id === draggableId)
+      );
 
-    setColumns({
-      ...columns,
-      [newStartColumn.id]: newStartColumn,
-      [newFinishColumn.id]: newFinishColumn,
-    });
+      setBudgets(updatedBudgets);
+
+      setColumns({
+        ...columns,
+        [newStartColumn.id]: newStartColumn,
+        [newFinishColumn.id]: newFinishColumn,
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar orçamentos após drag and drop:", error);
+    }
   };
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex flex-row gap-4 w-full overflow-x-auto pb-4">
+      <div className="flex flex-row gap-6 w-full overflow-x-auto pb-6">
         {columnOrder.map((columnId) => {
           const column = columns[columnId];
           const columnBudgets = column.budgetIds
@@ -150,17 +195,17 @@ export default function BudgetKanban({
 
           return (
             <div key={column.id} className="flex flex-col min-w-[350px]">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
                   <h2 className="font-semibold">{column.title}</h2>
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium">
+                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium">
                     {column.count}
                   </span>
                 </div>
               </div>
 
               {/* Card de Resumo */}
-              <div className={`rounded-lg ${bgColorClass} p-3 mb-4 shadow-sm`}>
+              <div className={`rounded-lg ${bgColorClass} p-4 mb-5 shadow-sm`}>
                 <div className="flex justify-between items-center">
                   <div className={`${textColorClass} text-lg font-medium`}>
                     {hiddenValues[column.id]
@@ -170,7 +215,7 @@ export default function BudgetKanban({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
+                    className="h-7 w-7 bg-white border border-gray-200 shadow-sm hover:bg-gray-100"
                     onClick={() => toggleValueVisibility(column.id)}
                   >
                     {hiddenValues[column.id] ? (
@@ -207,32 +252,49 @@ export default function BudgetKanban({
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className="flex-1 rounded-lg border bg-gray-50 p-3 min-h-[300px]"
+                    className="flex-1 rounded-lg border bg-gray-50 p-4 min-h-[350px]"
                   >
                     {isLoading ? (
-                      <div className="py-8 text-center text-sm text-gray-500">
+                      <div className="py-10 text-center text-sm text-gray-500">
                         Carregando orçamentos...
                       </div>
                     ) : columnBudgets.length === 0 ? (
-                      <div className="py-8 text-center text-sm text-gray-500">
+                      <div className="py-10 text-center text-sm text-gray-500">
                         Nenhum orçamento nesta coluna
                       </div>
                     ) : (
-                      columnBudgets.map((budget, index) => (
-                        <BudgetCard
-                          key={budget.id}
-                          budget={budget}
-                          index={index}
-                        />
-                      ))
+                      columnBudgets.map((budget, index) => {
+                        // Garantir que o budget tem todas as propriedades necessárias
+                        const normalizedBudget: BudgetWithTotal = {
+                          ...budget,
+                          // Garantir que temos project e client
+                          project: budget.project || budget.name || "",
+                          client: budget.client || budget.client_name || "",
+                          // Garantir que temos um valor para price
+                          price:
+                            typeof budget.price === "number"
+                              ? budget.price
+                              : budget.total || 0,
+                          // Garantir que temos um status
+                          status: budget.status || "Pendente",
+                        };
+
+                        return (
+                          <BudgetCard
+                            key={budget.id}
+                            budget={normalizedBudget}
+                            index={index}
+                          />
+                        );
+                      })
                     )}
                     {provided.placeholder}
 
                     <Button
                       variant="ghost"
-                      className="mt-2 w-full justify-start text-gray-500 text-sm"
+                      className="mt-3 w-full justify-start text-gray-500 text-sm bg-white border border-gray-200 shadow-sm hover:bg-gray-100"
                     >
-                      <PlusCircle className="mr-1 h-4 w-4" />
+                      <PlusCircle className="mr-2 h-4 w-4" />
                       Adicionar orçamento
                     </Button>
                   </div>
@@ -247,11 +309,11 @@ export default function BudgetKanban({
           <Button
             variant="outline"
             size="icon"
-            className="h-10 w-10 rounded-full border-dashed border-2"
+            className="h-11 w-11 rounded-full border-dashed border-2 bg-white shadow-sm hover:bg-gray-100"
           >
             <PlusCircle className="h-5 w-5" />
           </Button>
-          <span className="ml-2 text-sm font-medium text-muted-foreground">
+          <span className="ml-3 text-sm font-medium text-muted-foreground">
             Adicionar outra
           </span>
         </div>

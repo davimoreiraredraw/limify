@@ -8,6 +8,7 @@ export interface Budget {
   cost: number;
   price: number;
   profit: number;
+  total?: number;
   status:
     | "Visualizado"
     | "Não gerado"

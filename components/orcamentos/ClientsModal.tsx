@@ -111,7 +111,7 @@ export default function ClientsModal({
               variant="ghost"
               size="icon"
               onClick={() => setIsClientModalOpen(false)}
-              className="rounded-full h-8 w-8"
+              className="rounded-full h-8 w-8 shadow-sm border border-input"
             >
               <svg
                 width="15"
