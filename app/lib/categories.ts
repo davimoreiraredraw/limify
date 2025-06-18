@@ -1,5 +1,5 @@
 import { Category } from "@/lib/db/schema";
-
+export type { Category };
 // Função para buscar todas as categorias
 export async function fetchCategories(): Promise<Category[]> {
   try {
