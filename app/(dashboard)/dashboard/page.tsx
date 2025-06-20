@@ -1,70 +1,15 @@
 "use client";
 
 import { StatsChart } from "@/components/dashboard/stats-chart";
-import { CalendarIcon, CheckCircle2, Clock, XCircle } from "lucide-react";
+import {
+  CalendarIcon,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const mockData = {
-  stats: {
-    orcamentosRealizados: {
-      value: 15,
-      percentage: 5.39,
-      trend: "up",
-    },
-    faturamento: {
-      value: 10000,
-      percentage: 2.29,
-      trend: "up",
-    },
-    projetosFechados: {
-      value: 9,
-      percentage: 0.65,
-      trend: "down",
-    },
-    gastosFixos: {
-      value: 2000,
-      percentage: 2.29,
-      trend: "up",
-    },
-  },
-  ultimosOrcamentos: [
-    {
-      projeto: "Casa do Sergio",
-      data: "02/08/2023",
-      preco: 473.18,
-      analytics: "Visualizado",
-      status: "Completo",
-    },
-    {
-      projeto: "Varanda da Juana",
-      data: "01/09/2023",
-      preco: 473.18,
-      analytics: "Não gerado",
-      status: "Incompleto",
-    },
-    {
-      projeto: "Render cozinha",
-      data: "15/12/2023",
-      preco: 473.18,
-      analytics: "Visualizado",
-      status: "Completo",
-    },
-    {
-      projeto: "É só uma imagem",
-      data: "15/12/2023",
-      preco: 142.8,
-      analytics: "Pendente",
-      status: "Pendente",
-    },
-    {
-      projeto: "Render fácil",
-      data: "15/12/2023",
-      preco: 117.25,
-      analytics: "Visualizado",
-      status: "Completo",
-    },
-  ],
-};
+import { useEffect, useState } from "react";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -73,14 +18,155 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
+type Stats = {
+  orcamentosRealizados: {
+    value: number;
+    percentage: number;
+    trend: "up" | "down";
+  };
+  faturamento: {
+    value: number;
+    percentage: number;
+    trend: "up" | "down";
+  };
+  projetosFechados: {
+    value: number;
+    percentage: number;
+    trend: "up" | "down";
+  };
+  gastosFixos: {
+    value: number;
+    percentage: number;
+    trend: "up" | "down";
+  };
+};
+
+type Quote = {
+  projeto: string;
+  data: string;
+  preco: number;
+  analytics: "Visualizado" | "Não gerado" | "Pendente";
+  status: "Completo" | "Em andamento" | "Pendente";
+};
+
+function LoadingSkeleton() {
+  return (
+    <div className="flex flex-col gap-8 p-8">
+      <div className="flex items-center justify-between">
+        <div className="h-8 w-32 bg-gray-200 rounded-md animate-pulse" />
+        <div className="h-8 w-40 bg-gray-200 rounded-md animate-pulse" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="rounded-lg border bg-card p-6 shadow-sm">
+              <div className="flex flex-col gap-4">
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-20 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 w-12 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-lg border bg-card p-6 shadow-sm">
+          <div className="flex flex-col gap-4">
+            <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+            <div className="h-[200px] bg-gray-200 rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border bg-card p-6 shadow-sm">
+        <div className="mb-6">
+          <div className="h-6 w-40 bg-gray-200 rounded animate-pulse" />
+        </div>
+
+        <div className="relative overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="border-b text-xs uppercase">
+              <tr>
+                <th className="px-4 py-3 text-left font-medium">Projeto</th>
+                <th className="px-4 py-3 text-left font-medium">Data</th>
+                <th className="px-4 py-3 text-left font-medium">Preço</th>
+                <th className="px-4 py-3 text-left font-medium">Analytics</th>
+                <th className="px-4 py-3 text-left font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(5)].map((_, i) => (
+                <tr key={i} className="border-b last:border-0">
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <div className="h-6 w-20 bg-gray-200 rounded-full animate-pulse" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+
+        // Buscar estatísticas
+        const statsResponse = await fetch("/api/dashboard/stats");
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+
+        // Buscar orçamentos
+        const quotesResponse = await fetch("/api/dashboard/quotes");
+        const quotesData = await quotesResponse.json();
+        setQuotes(quotesData);
+      } catch (error) {
+        console.error("Erro ao buscar dados:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (isLoading || !stats) {
+    return <LoadingSkeleton />;
+  }
+
   return (
     <div className="flex flex-col gap-8 p-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <Button variant="outline" size="sm" className="gap-2">
           <CalendarIcon className="h-4 w-4" />
-          09 Feb 2024
+          {new Date().toLocaleDateString("pt-BR", {
+            month: "long",
+            year: "numeric",
+          })}
         </Button>
       </div>
 
@@ -93,10 +179,17 @@ export default function DashboardPage() {
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-medium">
-                  {mockData.stats.orcamentosRealizados.value}
+                  {stats.orcamentosRealizados.value}
                 </span>
-                <span className="text-sm text-emerald-500">
-                  ↑ {mockData.stats.orcamentosRealizados.percentage}%
+                <span
+                  className={`text-sm ${
+                    stats.orcamentosRealizados.trend === "up"
+                      ? "text-emerald-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  {stats.orcamentosRealizados.trend === "up" ? "↑" : "↓"}{" "}
+                  {stats.orcamentosRealizados.percentage}%
                 </span>
               </div>
             </div>
@@ -107,10 +200,17 @@ export default function DashboardPage() {
               <span className="text-sm text-muted-foreground">Faturamento</span>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-medium">
-                  {formatCurrency(mockData.stats.faturamento.value)}
+                  {formatCurrency(stats.faturamento.value)}
                 </span>
-                <span className="text-sm text-emerald-500">
-                  ↑ {mockData.stats.faturamento.percentage}%
+                <span
+                  className={`text-sm ${
+                    stats.faturamento.trend === "up"
+                      ? "text-emerald-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  {stats.faturamento.trend === "up" ? "↑" : "↓"}{" "}
+                  {stats.faturamento.percentage}%
                 </span>
               </div>
             </div>
@@ -123,10 +223,17 @@ export default function DashboardPage() {
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-medium">
-                  {mockData.stats.projetosFechados.value}
+                  {stats.projetosFechados.value}
                 </span>
-                <span className="text-sm text-red-500">
-                  ↓ {mockData.stats.projetosFechados.percentage}%
+                <span
+                  className={`text-sm ${
+                    stats.projetosFechados.trend === "up"
+                      ? "text-emerald-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  {stats.projetosFechados.trend === "up" ? "↑" : "↓"}{" "}
+                  {stats.projetosFechados.percentage}%
                 </span>
               </div>
             </div>
@@ -141,15 +248,18 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-1 text-red-500">
                   <span className="text-lg">-</span>
                   <span className="text-2xl font-medium">
-                    {formatCurrency(mockData.stats.gastosFixos.value).replace(
-                      "-",
-                      ""
-                    )}
+                    {formatCurrency(stats.gastosFixos.value).replace("-", "")}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 text-emerald-500 text-sm">
-                  <span>↑</span>
-                  <span>{mockData.stats.gastosFixos.percentage}%</span>
+                <div
+                  className={`flex items-center gap-1 ${
+                    stats.gastosFixos.trend === "up"
+                      ? "text-emerald-500"
+                      : "text-red-500"
+                  } text-sm`}
+                >
+                  <span>{stats.gastosFixos.trend === "up" ? "↑" : "↓"}</span>
+                  <span>{stats.gastosFixos.percentage}%</span>
                 </div>
               </div>
             </div>
@@ -159,7 +269,12 @@ export default function DashboardPage() {
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <div className="mb-6">
             <h2 className="text-lg font-semibold">Estatísticas</h2>
-            <p className="text-sm text-muted-foreground">Fevereiro, 2025</p>
+            <p className="text-sm text-muted-foreground">
+              {new Date().toLocaleDateString("pt-BR", {
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
           </div>
 
           <StatsChart />
@@ -183,7 +298,7 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {mockData.ultimosOrcamentos.map((orcamento, index) => (
+              {quotes.map((orcamento, index) => (
                 <tr key={index} className="border-b last:border-0">
                   <td className="whitespace-nowrap px-4 py-3 font-medium">
                     {orcamento.projeto}
@@ -219,9 +334,9 @@ export default function DashboardPage() {
                       className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
                         orcamento.status === "Completo"
                           ? "bg-emerald-50 text-emerald-600"
-                          : orcamento.status === "Incompleto"
-                          ? "bg-red-50 text-red-600"
-                          : "bg-amber-50 text-amber-600"
+                          : orcamento.status === "Em andamento"
+                          ? "bg-amber-50 text-amber-600"
+                          : "bg-red-50 text-red-600"
                       }`}
                     >
                       {orcamento.status}

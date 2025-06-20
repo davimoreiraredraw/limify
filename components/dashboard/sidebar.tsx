@@ -13,6 +13,7 @@ import {
   FolderKanban,
   Settings,
   CreditCard,
+  LineChart,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProgressRing } from "./progress-ring";
@@ -39,6 +40,11 @@ const mainNavItems = [
     title: "Portfólio",
     href: "/dashboard/portfolio",
     icon: FolderKanban,
+  },
+  {
+    title: "Insights",
+    href: "/dashboard/insights",
+    icon: LineChart,
   },
 ];
 

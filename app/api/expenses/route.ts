@@ -2,10 +2,38 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { ExpensesTable, CategoriesTable } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 // Rota para listar todas as despesas
 export async function GET(req: NextRequest) {
   try {
+    // Criar cliente do Supabase
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    // Obter usuário autenticado
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Usuário não autenticado" },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type") || "all"; // "fixed", "punctual", "all"
 
@@ -23,12 +51,18 @@ export async function GET(req: NextRequest) {
         CategoriesTable,
         eq(ExpensesTable.categoryId, CategoriesTable.id)
       )
+      .where(eq(ExpensesTable.userId, session.user.id))
       .orderBy(desc(ExpensesTable.createdAt));
 
     // Aplicar filtro pelo tipo se não for "all"
     if (type !== "all") {
       const isFixed = type === "fixed";
-      query = query.where(eq(ExpensesTable.isFixed, isFixed));
+      query = query.where(
+        and(
+          eq(ExpensesTable.userId, session.user.id),
+          eq(ExpensesTable.isFixed, isFixed)
+        )
+      );
     }
 
     const result = await query;
@@ -69,6 +103,32 @@ export async function GET(req: NextRequest) {
 // Rota para criar uma nova despesa
 export async function POST(req: NextRequest) {
   try {
+    // Criar cliente do Supabase
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    // Obter usuário autenticado
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Usuário não autenticado" },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
 
     // Extrai os dados do corpo da requisição
@@ -109,6 +169,7 @@ export async function POST(req: NextRequest) {
         frequency,
         compensationDay: compensation_day,
         categoryId: category_id,
+        userId: session.user.id,
         isFixed: is_fixed,
         isActive: true,
         isArchived: false,

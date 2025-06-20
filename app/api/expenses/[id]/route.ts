@@ -2,6 +2,34 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { ExpensesTable, CategoriesTable } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+// Função auxiliar para obter o usuário autenticado
+async function getAuthenticatedUser() {
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.user) {
+    throw new Error("Usuário não autenticado");
+  }
+
+  return session.user;
+}
 
 // Rota para obter uma despesa específica
 export async function GET(
@@ -9,6 +37,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getAuthenticatedUser();
     const id = params.id;
 
     // Buscar a despesa com categoria
@@ -26,7 +55,7 @@ export async function GET(
         CategoriesTable,
         eq(ExpensesTable.categoryId, CategoriesTable.id)
       )
-      .where(eq(ExpensesTable.id, id))
+      .where(and(eq(ExpensesTable.id, id), eq(ExpensesTable.userId, user.id)))
       .limit(1);
 
     if (result.length === 0) {
@@ -60,8 +89,14 @@ export async function GET(
     };
 
     return NextResponse.json({ expense });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao buscar despesa:", error);
+    if (error.message === "Usuário não autenticado") {
+      return NextResponse.json(
+        { error: "Usuário não autenticado" },
+        { status: 401 }
+      );
+    }
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
@@ -75,69 +110,49 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getAuthenticatedUser();
     const id = params.id;
     const body = await req.json();
 
-    // Extrair os dados do corpo da requisição
-    const {
-      name,
-      description,
-      value,
-      frequency,
-      compensation_day,
-      category_id,
-      is_fixed,
-      is_archived,
-    } = body;
+    // Verificar se a despesa existe e pertence ao usuário
+    const existingExpense = await db
+      .select()
+      .from(ExpensesTable)
+      .where(and(eq(ExpensesTable.id, id), eq(ExpensesTable.userId, user.id)))
+      .limit(1);
 
-    // Preparar objeto de atualização
-    const updates: any = {
-      updatedAt: new Date(),
-    };
-
-    // Adicionar apenas os campos que foram enviados
-    if (name !== undefined) updates.name = name;
-    if (description !== undefined) updates.description = description;
-    if (value !== undefined) {
-      updates.value =
-        typeof value === "string"
-          ? parseFloat(value.replace(/[^\d.,]/g, "").replace(",", "."))
-          : value;
-    }
-    if (frequency !== undefined) updates.frequency = frequency;
-    if (compensation_day !== undefined)
-      updates.compensationDay = compensation_day;
-    if (category_id !== undefined) updates.categoryId = category_id;
-    if (is_fixed !== undefined) updates.isFixed = is_fixed;
-    if (is_archived !== undefined) updates.isArchived = is_archived;
-
-    // Atualizar a despesa
-    const updatedExpenses = await db
-      .update(ExpensesTable)
-      .set(updates)
-      .where(eq(ExpensesTable.id, id))
-      .returning();
-
-    if (updatedExpenses.length === 0) {
+    if (existingExpense.length === 0) {
       return NextResponse.json(
         { error: "Despesa não encontrada" },
         { status: 404 }
       );
     }
 
-    // Buscar a categoria para incluir na resposta
-    const category = category_id
-      ? await db.query.CategoriesTable.findFirst({
-          where: eq(CategoriesTable.id, category_id),
-        })
-      : await db.query.CategoriesTable.findFirst({
-          where: eq(
-            CategoriesTable.id,
-            updatedExpenses[0].categoryId as string
-          ),
-        });
+    // Atualizar a despesa
+    const updatedExpenses = await db
+      .update(ExpensesTable)
+      .set({
+        ...body,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(ExpensesTable.id, id), eq(ExpensesTable.userId, user.id)))
+      .returning();
 
-    // Formatar a resposta no formato esperado pelo frontend
+    if (!updatedExpenses || updatedExpenses.length === 0) {
+      return NextResponse.json(
+        { error: "Erro ao atualizar despesa" },
+        { status: 500 }
+      );
+    }
+
+    // Buscar a categoria atualizada
+    const category = body.category_id
+      ? await db.query.CategoriesTable.findFirst({
+          where: eq(CategoriesTable.id, body.category_id),
+        })
+      : null;
+
+    // Formatar a resposta
     const expense = {
       ...updatedExpenses[0],
       category_id: updatedExpenses[0].categoryId,
@@ -157,8 +172,14 @@ export async function PATCH(
     };
 
     return NextResponse.json({ expense });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao atualizar despesa:", error);
+    if (error.message === "Usuário não autenticado") {
+      return NextResponse.json(
+        { error: "Usuário não autenticado" },
+        { status: 401 }
+      );
+    }
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
@@ -166,37 +187,43 @@ export async function PATCH(
   }
 }
 
-// Rota para "excluir" uma despesa (soft delete)
+// Rota para excluir uma despesa
 export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getAuthenticatedUser();
     const id = params.id;
 
-    // Em vez de deletar, desativamos a despesa (soft delete)
-    const updatedExpenses = await db
-      .update(ExpensesTable)
-      .set({
-        isActive: false,
-        updatedAt: new Date(),
-      })
-      .where(eq(ExpensesTable.id, id))
-      .returning();
+    // Verificar se a despesa existe e pertence ao usuário
+    const existingExpense = await db
+      .select()
+      .from(ExpensesTable)
+      .where(and(eq(ExpensesTable.id, id), eq(ExpensesTable.userId, user.id)))
+      .limit(1);
 
-    if (updatedExpenses.length === 0) {
+    if (existingExpense.length === 0) {
       return NextResponse.json(
         { error: "Despesa não encontrada" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(
-      { message: "Despesa excluída com sucesso" },
-      { status: 200 }
-    );
-  } catch (error) {
+    // Excluir a despesa
+    await db
+      .delete(ExpensesTable)
+      .where(and(eq(ExpensesTable.id, id), eq(ExpensesTable.userId, user.id)));
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
     console.error("Erro ao excluir despesa:", error);
+    if (error.message === "Usuário não autenticado") {
+      return NextResponse.json(
+        { error: "Usuário não autenticado" },
+        { status: 401 }
+      );
+    }
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }

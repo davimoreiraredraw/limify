@@ -9,6 +9,8 @@ import {
   boolean,
   pgEnum,
   integer,
+  numeric,
+  index,
 } from "drizzle-orm/pg-core";
 import { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
@@ -83,6 +85,9 @@ export const ExpensesTable = pgTable("expenses", {
   frequency: text("frequency").notNull().default("Mensal"),
   compensationDay: integer("compensation_day"),
   categoryId: uuid("category_id").references(() => CategoriesTable.id),
+  userId: text("user_id")
+    .references(() => profiles.id)
+    .notNull(),
   isFixed: boolean("is_fixed").notNull().default(true),
   isActive: boolean("is_active").notNull().default(true),
   isArchived: boolean("is_archived").notNull().default(false),
@@ -201,6 +206,10 @@ export const expensesRelations = drizzleRelations(ExpensesTable, ({ one }) => ({
     fields: [ExpensesTable.categoryId],
     references: [CategoriesTable.id],
   }),
+  user: one(profiles, {
+    fields: [ExpensesTable.userId],
+    references: [profiles.id],
+  }),
 }));
 
 // Relações para planos
@@ -212,4 +221,30 @@ export const userPlansRelations = drizzleRelations(
       references: [profiles.id],
     }),
   })
+);
+
+export const aiMessagesHistory = pgTable(
+  "ai_messages_history",
+  {
+    id: uuid("id").defaultRandom().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
+    tipoProjeto: text("tipo_projeto").notNull(),
+    estado: text("estado").notNull(),
+    metragem: numeric("metragem").notNull(),
+    valorInformado: numeric("valor_informado").notNull(),
+    margem: numeric("margem").notNull(),
+    cubAtual: numeric("cub_atual").notNull(),
+    sugestao: text("sugestao").notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "string",
+    }).defaultNow(),
+  },
+  (table) => {
+    return {
+      idxAiMessagesHistoryUserId: index("idx_ai_messages_history_user_id").on(
+        table.userId
+      ),
+    };
+  }
 );
