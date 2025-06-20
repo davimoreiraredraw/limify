@@ -163,6 +163,34 @@ export const userPlansTable = pgTable("user_plans", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Enumeração para os tipos de roles de equipe
+export const teamRoleEnum = pgEnum("team_role", ["owner", "admin", "member"]);
+
+// Tabela de equipes
+export const teamsTable = pgTable("teams", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  ownerId: text("owner_id")
+    .references(() => profiles.id)
+    .notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tabela de membros da equipe
+export const teamMembersTable = pgTable("team_members", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  teamId: uuid("team_id")
+    .references(() => teamsTable.id)
+    .notNull(),
+  userId: text("user_id")
+    .references(() => profiles.id)
+    .notNull(),
+  role: teamRoleEnum("role").default("member").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Tipos para as tabelas
 export type Category = InferSelectModel<typeof CategoriesTable>;
 export type NewCategory = InferInsertModel<typeof CategoriesTable>;
@@ -176,6 +204,13 @@ export type NewClient = InferInsertModel<typeof clientsTable>;
 // Tipos para planos
 export type UserPlan = InferSelectModel<typeof userPlansTable>;
 export type NewUserPlan = InferInsertModel<typeof userPlansTable>;
+
+// Tipos para as tabelas de equipe
+export type Team = InferSelectModel<typeof teamsTable>;
+export type NewTeam = InferInsertModel<typeof teamsTable>;
+
+export type TeamMember = InferSelectModel<typeof teamMembersTable>;
+export type NewTeamMember = InferInsertModel<typeof teamMembersTable>;
 
 // Relações
 export const projectsRelations = drizzleRelations(
@@ -218,6 +253,29 @@ export const userPlansRelations = drizzleRelations(
   ({ one }) => ({
     user: one(profiles, {
       fields: [userPlansTable.userId],
+      references: [profiles.id],
+    }),
+  })
+);
+
+// Relações para equipes
+export const teamsRelations = drizzleRelations(teamsTable, ({ one, many }) => ({
+  owner: one(profiles, {
+    fields: [teamsTable.ownerId],
+    references: [profiles.id],
+  }),
+  members: many(teamMembersTable),
+}));
+
+export const teamMembersRelations = drizzleRelations(
+  teamMembersTable,
+  ({ one }) => ({
+    team: one(teamsTable, {
+      fields: [teamMembersTable.teamId],
+      references: [teamsTable.id],
+    }),
+    user: one(profiles, {
+      fields: [teamMembersTable.userId],
       references: [profiles.id],
     }),
   })

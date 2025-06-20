@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { createBrowserClient } from "@supabase/ssr";
 
 interface PasswordForm {
   currentPassword: string;
@@ -17,6 +18,11 @@ interface ProfileForm {
 }
 
 export default function ConfiguracoesPage() {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
     currentPassword: "",
     newPassword: "",
@@ -24,12 +30,30 @@ export default function ConfiguracoesPage() {
   });
 
   const [profileForm, setProfileForm] = useState<ProfileForm>({
-    name: "Alexandre Silva",
-    email: "alexandre@email.com",
-    phone: "(11) 99999-9999",
+    name: "",
+    email: "",
+    phone: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        setProfileForm({
+          name: user.user_metadata?.name || "",
+          email: user.email || "",
+          phone: user.user_metadata?.phone || "",
+        });
+      }
+    };
+
+    loadUserData();
+  }, [supabase.auth]);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,8 +75,14 @@ export default function ConfiguracoesPage() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Implementar a lógica de alterar senha
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulando uma requisição
+      const { error } = await supabase.auth.updateUser({
+        password: passwordForm.newPassword,
+      });
+
+      if (error) {
+        throw error;
+      }
+
       toast.success("Senha alterada com sucesso!");
       setPasswordForm({
         currentPassword: "",
@@ -60,7 +90,9 @@ export default function ConfiguracoesPage() {
         confirmPassword: "",
       });
     } catch (error) {
-      toast.error("Erro ao alterar senha");
+      toast.error(
+        error instanceof Error ? error.message : "Erro ao alterar senha"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -77,11 +109,23 @@ export default function ConfiguracoesPage() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Implementar a lógica de atualizar perfil
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulando uma requisição
+      const { error } = await supabase.auth.updateUser({
+        email: profileForm.email,
+        data: {
+          name: profileForm.name,
+          phone: profileForm.phone,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
       toast.success("Perfil atualizado com sucesso!");
     } catch (error) {
-      toast.error("Erro ao atualizar perfil");
+      toast.error(
+        error instanceof Error ? error.message : "Erro ao atualizar perfil"
+      );
     } finally {
       setIsSubmitting(false);
     }

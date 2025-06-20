@@ -36,6 +36,13 @@
       "when": 1750396276885,
       "tag": "0004_round_captain_cross",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1750422252919,
+      "tag": "0005_lush_annihilus",
+      "breakpoints": true
     }
   ]
 }

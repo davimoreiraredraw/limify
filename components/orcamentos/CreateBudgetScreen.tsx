@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Dispatch, SetStateAction, useState } from "react";
 import BudgetTypes from "./BudgetTypes";
-import BudgetFormSteps from "./BudgetFormSteps";
+import BudgetM2Form from "./BudgetFormSteps";
+import BudgetCompleteForm from "./BudgetCompleteForm";
 
 interface CreateBudgetScreenProps {
   isCreatingBudget: boolean;
@@ -88,12 +89,44 @@ export default function CreateBudgetScreen({
             </div>
           </div>
         </div>
-      ) : (
-        <BudgetFormSteps
+      ) : selectedBudgetType === "m2" ? (
+        <BudgetM2Form
           budgetStep={budgetStep}
           setBudgetStep={setBudgetStep}
           selectedBudgetType={selectedBudgetType}
         />
+      ) : selectedBudgetType === "complete" ? (
+        <BudgetCompleteForm
+          budgetStep={budgetStep}
+          setBudgetStep={setBudgetStep}
+          selectedBudgetType={selectedBudgetType}
+        />
+      ) : (
+        <div className="max-w-3xl mx-auto w-full py-6 text-center">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-2">Em desenvolvimento</h2>
+            <p className="text-gray-500">
+              Esta modalidade de orçamento está em desenvolvimento e estará
+              disponível em breve.
+            </p>
+          </div>
+
+          <div className="flex justify-center">
+            <div className="w-40 h-40 mb-8">
+              <img
+                src="/construction.png"
+                alt="Construction illustration"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null;
+                  target.src =
+                    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEwMCAxNzVDMTQxLjQyMSAxNzUgMTc1IDE0MS40MjEgMTc1IDEwMEMxNzUgNTguNTc5IDE0MS40MjEgMjUgMTAwIDI1QzU4LjU3OSAyNSAyNSA1OC41NzkgMjUgMTAwQzI1IDE0MS40MjEgNTguNTc5IDE3NSAxMDAgMTc1WiIgc3Ryb2tlPSIjNmI3MjgwIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik0xMDAgNzVWMTI1IiBzdHJva2U9IiM2YjcyODAiIHN0cm9rZS13aWR0aD0iMTYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik03NSAxMDBIMTI1IiBzdHJva2U9IiM2YjcyODAiIHN0cm9rZS13aWR0aD0iMTYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==";
+                }}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

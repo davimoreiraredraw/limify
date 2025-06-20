@@ -27,7 +27,7 @@ interface BudgetItem {
   total: number;
 }
 
-export default function BudgetFormSteps({
+export default function BudgetM2Form({
   budgetStep,
   setBudgetStep,
   selectedBudgetType,

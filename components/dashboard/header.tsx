@@ -43,7 +43,7 @@ export function DashboardHeader() {
       </div>
 
       <div className="hidden lg:block">
-        <h1 className="text-lg font-medium">Eai Davi!</h1>
+        <h1 className="text-lg font-medium">Eai Limifier!</h1>
         <p className="text-sm text-muted-foreground">O que vamos orçar hoje?</p>
       </div>
 

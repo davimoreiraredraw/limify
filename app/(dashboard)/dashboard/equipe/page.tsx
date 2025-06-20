@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ClockIcon } from "@heroicons/react/24/outline";
 import { PlusIcon } from "@heroicons/react/24/solid";
 import { HistorySidebar } from "./components/HistorySidebar";
 import TeamFormModal from "./components/TeamFormModal";
+import { toast } from "sonner";
 
 interface TeamMember {
   id: string;
   name: string;
   email: string;
-  roles: ("Admin" | "Owner" | "Member")[];
+  roles: ("admin" | "owner" | "member")[];
   selected?: boolean;
 }
 
@@ -28,50 +29,32 @@ interface Activity {
 export default function TeamPage() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isTeamFormOpen, setIsTeamFormOpen] = useState(false);
-  const [teamMembers] = useState<TeamMember[]>([
-    {
-      id: "1",
-      name: "Elizabeth Lopez",
-      email: "elopez@yahoo.com",
-      roles: ["Admin"],
-    },
-    {
-      id: "2",
-      name: "Matthew Martinez",
-      email: "mmartinez1997@gmail.com",
-      roles: ["Owner"],
-    },
-    {
-      id: "3",
-      name: "Elizabeth Hall",
-      email: "elizabeth_hall_1998@gmail.com",
-      roles: ["Owner", "Member"],
-    },
-    {
-      id: "4",
-      name: "Maria White",
-      email: "maria_white@hotmail.com",
-      roles: ["Admin"],
-    },
-    {
-      id: "5",
-      name: "Elizabeth Watson",
-      email: "ewatson@yahoo.com",
-      roles: ["Admin"],
-    },
-    {
-      id: "6",
-      name: "Elizabeth Allen",
-      email: "eallen@gmail.com",
-      roles: ["Owner"],
-    },
-    {
-      id: "7",
-      name: "Caleb Jones",
-      email: "calebjones@gmail.com",
-      roles: ["Member"],
-    },
-  ]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Função para buscar membros da equipe
+  const fetchTeamMembers = async () => {
+    try {
+      const response = await fetch("/api/teams");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao buscar membros da equipe");
+      }
+
+      setTeamMembers(data.teamMembers);
+    } catch (error) {
+      console.error("Erro ao buscar membros:", error);
+      toast.error("Erro ao carregar membros da equipe");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Carregar membros ao montar o componente
+  useEffect(() => {
+    fetchTeamMembers();
+  }, []);
 
   const activities: Activity[] = [
     {
@@ -107,6 +90,37 @@ export default function TeamPage() {
       action: "Adicionou e editor despesas",
     },
   ];
+
+  // Função para adicionar novo membro
+  const handleAddMember = async (
+    email: string,
+    role: "admin" | "member",
+    name?: string
+  ) => {
+    try {
+      const response = await fetch("/api/teams", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, role, name }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao adicionar membro");
+      }
+
+      // Atualizar a lista de membros
+      setTeamMembers((prev) => [...prev, data.member]);
+      toast.success("Membro adicionado com sucesso!");
+      setIsTeamFormOpen(false);
+    } catch (error) {
+      console.error("Erro ao adicionar membro:", error);
+      toast.error("Erro ao adicionar membro à equipe");
+    }
+  };
 
   return (
     <>
@@ -145,46 +159,54 @@ export default function TeamPage() {
             <div className="text-sm font-medium text-gray-500">Ações</div>
           </div>
 
-          {teamMembers.map((member) => (
-            <div
-              key={member.id}
-              className="grid grid-cols-[48px,2fr,2fr,1fr,80px] gap-4 px-4 py-3 border-b border-gray-100 hover:bg-gray-50"
-            >
-              <div className="flex items-center">
-                <Checkbox
-                  className="rounded-[4px] border-gray-300"
-                  checked={member.selected}
-                />
-              </div>
-              <div className="flex items-center text-sm text-gray-900">
-                {member.name}
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                {member.email}
-              </div>
-              <div className="flex items-center gap-1">
-                {member.roles.map((role, index) => (
-                  <span
-                    key={index}
-                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      role === "Admin"
-                        ? "bg-gray-100 text-gray-700"
-                        : role === "Owner"
-                        ? "bg-[#E6FFFA] text-[#38B2AC]"
-                        : "bg-[#EBF4FF] text-[#3182CE]"
-                    }`}
-                  >
-                    {role}
-                  </span>
-                ))}
-              </div>
-              <div className="flex items-center">
-                <button className="text-[#6E2DFA] text-sm font-medium hover:text-[#6E2DFA]/90">
-                  Edit
-                </button>
-              </div>
+          {isLoading ? (
+            <div className="p-4 text-center text-gray-500">Carregando...</div>
+          ) : teamMembers.length === 0 ? (
+            <div className="p-4 text-center text-gray-500">
+              Nenhum membro encontrado
             </div>
-          ))}
+          ) : (
+            teamMembers.map((member) => (
+              <div
+                key={member.id}
+                className="grid grid-cols-[48px,2fr,2fr,1fr,80px] gap-4 px-4 py-3 border-b border-gray-100 hover:bg-gray-50"
+              >
+                <div className="flex items-center">
+                  <Checkbox
+                    className="rounded-[4px] border-gray-300"
+                    checked={member.selected}
+                  />
+                </div>
+                <div className="flex items-center text-sm text-gray-900">
+                  {member.name}
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  {member.email}
+                </div>
+                <div className="flex items-center gap-1">
+                  {member.roles.map((role, index) => (
+                    <span
+                      key={index}
+                      className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        role === "admin"
+                          ? "bg-gray-100 text-gray-700"
+                          : role === "owner"
+                          ? "bg-[#E6FFFA] text-[#38B2AC]"
+                          : "bg-[#EBF4FF] text-[#3182CE]"
+                      }`}
+                    >
+                      {role}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-center">
+                  <button className="text-[#6E2DFA] text-sm font-medium hover:text-[#6E2DFA]/90">
+                    Edit
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -196,6 +218,7 @@ export default function TeamPage() {
       <TeamFormModal
         isOpen={isTeamFormOpen}
         onClose={() => setIsTeamFormOpen(false)}
+        onSubmit={handleAddMember}
       />
     </>
   );

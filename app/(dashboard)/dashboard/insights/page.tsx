@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Send,
@@ -18,6 +18,7 @@ interface Message {
   content: string;
   sender: "user" | "assistant";
   timestamp: Date;
+  isStreaming?: boolean;
 }
 
 interface ProjectTypes {
@@ -30,35 +31,24 @@ export default function InsightsPage() {
   const [activeView, setActiveView] = useState<"insights" | "reports">(
     "insights"
   );
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      content:
-        "Eu officia officia id excepteur enim excepteur nulla eiusmod in amet ea laborum nostrud aliquip magna. Adipisicing",
-      sender: "assistant",
-      timestamp: new Date(Date.now() - 120000), // 2 mins ago
-    },
-    {
-      id: "2",
-      content: "Mollit excepteur eiusmod consequat Lo",
-      sender: "user",
-      timestamp: new Date(Date.now() - 120000), // 2 mins ago
-    },
-    {
-      id: "3",
-      content: "Exercitation proident ea id r",
-      sender: "user",
-      timestamp: new Date(Date.now() - 120000), // 2 mins ago
-    },
-  ]);
-
-  const [inputValue, setInputValue] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [tokens, setTokens] = useState<number>(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const suggestedQuestions = [
     "Quais materiais estao em alta?",
     "Quanto custa um projeto de 150m2?",
-    "Posso aumentar minha equipe esse mês?",
+    "Qual tipo de orçamento é mais barato na arquitetura ?",
   ];
 
   const projectTypes: ProjectTypes[] = [
@@ -82,39 +72,91 @@ export default function InsightsPage() {
     { month: "Dez", value: 26000 },
   ];
 
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim()) return;
+  const handleSubmit = async () => {
+    if (!inputRef.current || !inputRef.current.value.trim() || isLoading)
+      return;
 
-    // Adiciona a mensagem do usuário
+    const trimmedContent = inputRef.current.value.trim();
+    setIsLoading(true);
+
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: content.trim(),
+      content: trimmedContent,
       sender: "user",
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue("");
-    setIsLoading(true);
+    const assistantMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      content: "",
+      sender: "assistant",
+      timestamp: new Date(),
+      isStreaming: true,
+    };
 
-    // Simula resposta da IA (você implementará a integração real depois)
-    setTimeout(() => {
-      const assistantMessage: Message = {
+    setMessages((prev) => [...prev, userMessage, assistantMessage]);
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+
+    try {
+      const messageHistory = [...messages, userMessage].map((msg) => ({
+        role: msg.sender,
+        content: msg.content,
+      }));
+
+      const response = await fetch("http://localhost:3003/api/openai/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: trimmedContent,
+          history: messageHistory,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Falha ao obter resposta do chatbot");
+      }
+
+      const data = await response.json();
+
+      // Atualiza a mensagem do assistente com a resposta
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessage.id
+            ? { ...msg, content: data.content, isStreaming: false }
+            : msg
+        )
+      );
+
+      if (data.tokens) {
+        setTokens(data.tokens);
+      }
+    } catch (error) {
+      console.error("Erro ao processar mensagem:", error);
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content:
-          "Esta é uma resposta simulada da IA. Aqui você implementará a integração com sua IA.",
+          "Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.",
         sender: "assistant",
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages((prev) =>
+        prev
+          .filter((msg) => msg.id !== assistantMessage.id)
+          .concat(errorMessage)
+      );
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage(inputValue);
+  const handleSuggestedQuestion = (question: string) => {
+    if (inputRef.current) {
+      inputRef.current.value = question;
+      handleSubmit();
     }
   };
 
@@ -256,7 +298,11 @@ export default function InsightsPage() {
               {message.sender === "assistant" && (
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 rounded-full bg-[#6E2DFA] flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-white" />
+                    <Sparkles
+                      className={`w-4 h-4 text-white ${
+                        message.isStreaming ? "animate-pulse" : ""
+                      }`}
+                    />
                   </div>
                 </div>
               )}
@@ -267,7 +313,14 @@ export default function InsightsPage() {
                     : "bg-[#F3F0FF]"
                 }`}
               >
-                {message.content}
+                {message.content ||
+                  (message.isStreaming && (
+                    <div className="flex gap-1">
+                      <span className="animate-bounce">.</span>
+                      <span className="animate-bounce delay-100">.</span>
+                      <span className="animate-bounce delay-200">.</span>
+                    </div>
+                  ))}
                 <div className="text-xs mt-1 opacity-70">
                   {message.timestamp.toLocaleTimeString([], {
                     hour: "2-digit",
@@ -289,6 +342,7 @@ export default function InsightsPage() {
               )}
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
@@ -296,27 +350,33 @@ export default function InsightsPage() {
         <div className="max-w-4xl mx-auto">
           <div className="relative">
             <input
+              ref={inputRef}
               type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Pergunte algo sobre seus projetos e orçamentos..."
+              placeholder={
+                isLoading
+                  ? "Aguarde a resposta..."
+                  : "Pergunte algo sobre seus projetos e orçamentos..."
+              }
               className="w-full p-4 pr-12 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6E2DFA] focus:border-transparent"
               disabled={isLoading}
             />
             <button
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6E2DFA] disabled:opacity-50"
-              onClick={() => handleSendMessage(inputValue)}
-              disabled={isLoading || !inputValue.trim()}
+              onClick={handleSubmit}
+              disabled={isLoading}
             >
-              <Send className="w-5 h-5" />
+              <Send className={`w-5 h-5 ${isLoading ? "animate-pulse" : ""}`} />
             </button>
           </div>
 
           <div className="flex justify-end mt-2">
-            <div className="bg-[#6E2DFA] text-white px-4 py-1 rounded-full text-sm flex items-center gap-2">
+            <div
+              className={`bg-[#6E2DFA] text-white px-4 py-1 rounded-full text-sm flex items-center gap-2 ${
+                isLoading ? "animate-pulse" : ""
+              }`}
+            >
               <Sparkles className="w-4 h-4" />
-              Tokens 10 / 100
+              Tokens {tokens} / 100
             </div>
           </div>
 
@@ -330,7 +390,7 @@ export default function InsightsPage() {
                 <button
                   key={index}
                   className="px-4 py-2 rounded-full border border-[#6E2DFA] text-[#6E2DFA] text-sm hover:bg-[#6E2DFA] hover:text-white transition-colors"
-                  onClick={() => handleSendMessage(question)}
+                  onClick={() => handleSuggestedQuestion(question)}
                   disabled={isLoading}
                 >
                   {question}

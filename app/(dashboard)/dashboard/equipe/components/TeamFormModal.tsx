@@ -16,18 +16,23 @@ interface TeamFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   member?: TeamMember | null;
+  onSubmit: (
+    email: string,
+    role: "admin" | "member",
+    name?: string
+  ) => Promise<void>;
 }
 
 const ROLES = [
-  { id: "owner", label: "Dono", value: "Owner" },
-  { id: "admin", label: "Admin", value: "Admin" },
-  { id: "member", label: "Membro", value: "Member" },
+  { id: "admin", label: "Admin", value: "admin" },
+  { id: "member", label: "Membro", value: "member" },
 ] as const;
 
 export default function TeamFormModal({
   isOpen,
   onClose,
   member,
+  onSubmit,
 }: TeamFormModalProps) {
   const [photo, setPhoto] = useState<string | null>(member?.photoUrl || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,21 +69,9 @@ export default function TeamFormModal({
     setIsSubmitting(true);
 
     try {
-      const memberData = {
-        name,
-        email,
-        photoUrl: photo,
-        roles: Array.from(selectedRoles) as ("Owner" | "Admin" | "Member")[],
-      };
-
-      // TODO: Implementar a lógica de salvar
-      console.log("Dados do membro:", memberData);
-
-      toast.success(
-        member
-          ? "Membro atualizado com sucesso!"
-          : "Membro adicionado com sucesso!"
-      );
+      // Pegar o primeiro role selecionado (já que agora só permitimos um)
+      const role = Array.from(selectedRoles)[0] as "admin" | "member";
+      await onSubmit(email, role, name);
       onClose();
     } catch (error) {
       console.error("Erro ao salvar membro:", error);
