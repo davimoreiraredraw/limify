@@ -28,6 +28,7 @@ import { useUserPlan } from "@/lib/hooks/useUserPlan";
 import { PlanLimitWarning } from "@/components/PlanLimitWarning";
 import Link from "next/link";
 import { pt } from "date-fns/locale";
+import { useSearchParams } from "next/navigation";
 
 // Interface para o orçamento que pode ter price ou total
 interface BudgetWithTotal extends Budget {
@@ -57,6 +58,7 @@ interface BudgetListItem {
 }
 
 export default function OrcamentosPage() {
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [budgets, setBudgets] = useState<BudgetListItem[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -122,6 +124,13 @@ export default function OrcamentosPage() {
 
   const [orcamentosCount, setOrcamentosCount] = useState(0);
   const { checkResourceLimit, isLoading: planLoading } = useUserPlan();
+
+  useEffect(() => {
+    const shouldCreateNew = searchParams.get("new") === "true";
+    if (shouldCreateNew) {
+      setIsCreatingBudget(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchBudgets = async () => {

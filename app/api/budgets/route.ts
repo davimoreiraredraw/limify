@@ -6,11 +6,42 @@ import {
   budgetReferences,
   clientsTable,
 } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+async function getUserId() {
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error || !session?.user?.id) {
+    throw new Error("Usuário não autenticado");
+  }
+
+  return session.user.id;
+}
 
 export async function GET() {
   try {
     console.log("Iniciando busca de orçamentos...");
+
+    // Obter o ID do usuário logado
+    const userId = await getUserId();
 
     // Verificar conexão com o banco de dados
     try {
@@ -34,7 +65,7 @@ export async function GET() {
       );
     }
 
-    // Buscar todos os orçamentos e juntar com o nome do cliente
+    // Buscar todos os orçamentos do usuário logado
     const result = await db
       .select({
         id: budgets.id,
@@ -44,6 +75,7 @@ export async function GET() {
         created_at: budgets.created_at,
       })
       .from(budgets)
+      .where(eq(budgets.user_id, userId))
       .leftJoin(clientsTable, eq(clientsTable.id, budgets.client_id));
 
     console.log("Orçamentos encontrados:", result.length);
@@ -62,6 +94,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    // Obter o ID do usuário logado
+    const userId = await getUserId();
+
     const body = await req.json();
     const {
       name,
@@ -92,6 +127,7 @@ export async function POST(req: NextRequest) {
         average_price_per_m2,
         discount,
         discount_type,
+        user_id: userId,
       })
       .returning();
 

@@ -48,9 +48,11 @@ export function DashboardHeader() {
       </div>
 
       <div className="flex items-center gap-3 md:gap-4">
-        <Button variant="default" className="hidden sm:flex">
-          + Novo orçamento
-        </Button>
+        <Link href="/dashboard/orcamentos?new=true">
+          <Button variant="default" className="hidden sm:flex">
+            + Novo orçamento
+          </Button>
+        </Link>
 
         <Button
           variant="ghost"

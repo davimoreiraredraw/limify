@@ -69,6 +69,12 @@ export default function BudgetCompleteForm({
     "category"
   );
 
+  // Novos estados para gerenciar orçamentos anteriores
+  const [previousBudgets, setPreviousBudgets] = useState<any[]>([]);
+  const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null);
+  const [searchBudget, setSearchBudget] = useState("");
+  const [showBudgetList, setShowBudgetList] = useState(false);
+
   const { clients, fetchClients, createClient } = useClients();
   const [clientId, setClientId] = useState<string | null>(null);
   const [showClientsModal, setShowClientsModal] = useState(false);
@@ -485,6 +491,14 @@ export default function BudgetCompleteForm({
     "percentage"
   );
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profitMargin, setProfitMargin] = useState(0);
+  const [deliveryTime, setDeliveryTime] = useState(0);
+  const [adjustmentValue, setAdjustmentValue] = useState(0);
+  const [adjustmentValueType, setAdjustmentValueType] = useState<
+    "percentage" | "value"
+  >("percentage");
+
   const calculateWetAreaAdditional = () => {
     if (disableWetArea || !wetRooms || !dryRooms || !wetAreaPercentage)
       return 0;
@@ -630,6 +644,44 @@ export default function BudgetCompleteForm({
       return [...prevPhases, newPhase];
     });
   };
+
+  // Função para buscar orçamentos anteriores
+  const fetchPreviousBudgets = async () => {
+    try {
+      const response = await fetch("/api/budgets/complete");
+      const data = await response.json();
+      if (data.success) {
+        setPreviousBudgets(data.budgets);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar orçamentos:", error);
+      toast.error("Erro ao carregar orçamentos anteriores");
+    }
+  };
+
+  // Função para selecionar um orçamento anterior
+  const handleSelectPreviousBudget = async (budgetId: string) => {
+    try {
+      const response = await fetch(`/api/budgets/complete/${budgetId}`);
+      const data = await response.json();
+      if (data.success) {
+        setBudgetPhases(data.budget.phases);
+        setPreviousBudgetName(data.budget.name);
+        setSelectedBudgetId(budgetId);
+        setShowBudgetList(false);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar orçamento:", error);
+      toast.error("Erro ao carregar orçamento selecionado");
+    }
+  };
+
+  // Efeito para carregar orçamentos quando o componente montar
+  useEffect(() => {
+    if (budgetModel === "previous") {
+      fetchPreviousBudgets();
+    }
+  }, [budgetModel]);
 
   const renderStepContent = () => {
     switch (budgetStep) {
@@ -881,15 +933,61 @@ export default function BudgetCompleteForm({
                     </div>
                   </div>
                   {budgetModel === "previous" && (
-                    <div className="flex-1 flex gap-2">
-                      <input
-                        type="text"
-                        className="flex-1 px-4 py-2 border rounded-lg text-sm"
-                        placeholder="Nome do orçamento"
-                        value={previousBudgetName}
-                        onChange={(e) => setPreviousBudgetName(e.target.value)}
-                      />
-                      <Button className="bg-indigo-600 text-white">Usar</Button>
+                    <div className="flex-1">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          className="w-full border rounded-lg px-4 py-2"
+                          placeholder="Buscar orçamento anterior..."
+                          value={searchBudget}
+                          onChange={(e) => {
+                            setSearchBudget(e.target.value);
+                            setShowBudgetList(true);
+                          }}
+                          onFocus={() => setShowBudgetList(true)}
+                        />
+                        {showBudgetList && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            {previousBudgets
+                              .filter((budget) =>
+                                budget.name
+                                  .toLowerCase()
+                                  .includes(searchBudget.toLowerCase())
+                              )
+                              .map((budget) => (
+                                <div
+                                  key={budget.id}
+                                  className={`p-3 hover:bg-gray-50 cursor-pointer ${
+                                    selectedBudgetId === budget.id
+                                      ? "bg-indigo-50"
+                                      : ""
+                                  }`}
+                                  onClick={() =>
+                                    handleSelectPreviousBudget(budget.id)
+                                  }
+                                >
+                                  <div className="font-medium">
+                                    {budget.name}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    Criado em:{" "}
+                                    {new Date(
+                                      budget.created_at
+                                    ).toLocaleDateString()}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    Valor: R$ {budget.total}
+                                  </div>
+                                </div>
+                              ))}
+                            {previousBudgets.length === 0 && (
+                              <div className="p-3 text-gray-500">
+                                Nenhum orçamento encontrado
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1902,6 +2000,126 @@ export default function BudgetCompleteForm({
     }
   };
 
+  const handleSubmitBudget = async () => {
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        name: projectName,
+        description: projectDescription,
+        client_id:
+          selectedClientOption === "existing" && clientId ? clientId : null,
+        model: budgetModel,
+        budget_type: "complete",
+        value_type: selectedValue,
+        total: calculateTotalBudget(),
+        phases: budgetPhases.map((phase) => ({
+          name: phase.name,
+          description: phase.description,
+          baseValue: phase.baseValue,
+          segments: phase.segments?.map((segment) => ({
+            name: segment.name,
+            description: segment.description,
+            activities: segment.activities.map((activity) => ({
+              name: activity.name,
+              description: activity.description,
+              time: activity.time,
+              costPerHour: activity.costPerHour,
+              totalCost: activity.totalCost,
+              complexity: activity.complexity,
+            })),
+          })),
+          activities: phase.activities.map((activity) => ({
+            name: activity.name,
+            description: activity.description,
+            time: activity.time,
+            costPerHour: activity.costPerHour,
+            totalCost: activity.totalCost,
+            complexity: activity.complexity,
+          })),
+        })),
+        additionals: {
+          wetAreaQuantity: dryRooms,
+          dryAreaQuantity: wetRooms,
+          wetAreaPercentage: wetAreaPercentage,
+          deliveryTime: disableDeliveryTime ? null : 0,
+          disableDeliveryCharge: disableDeliveryTime,
+        },
+        references: [],
+        profit_margin: profitConfig === "final" ? 0 : 0,
+        final_adjustments: {
+          type: adjustmentType,
+          value: adjustmentType === "increase" ? 0 : 0,
+          valueType: adjustmentType === "discount" ? "percentage" : null,
+        },
+      };
+
+      const res = await fetch("/api/budgets/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success("Orçamento criado com sucesso!");
+        router.push("/dashboard/orcamentos");
+      } else {
+        throw new Error(data.error || "Erro ao criar orçamento");
+      }
+    } catch (err) {
+      console.error("Erro ao salvar orçamento:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Erro ao criar orçamento"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Função para calcular o valor total do orçamento
+  const calculateTotalBudget = () => {
+    let total = budgetPhases.reduce((sum, phase) => {
+      const phaseTotal = phase.activities.reduce((actSum, activity) => {
+        return actSum + activity.totalCost;
+      }, 0);
+
+      const segmentsTotal =
+        phase.segments?.reduce((segSum, segment) => {
+          return (
+            segSum +
+            segment.activities.reduce((actSum, activity) => {
+              return actSum + activity.totalCost;
+            }, 0)
+          );
+        }, 0) || 0;
+
+      return sum + phaseTotal + segmentsTotal;
+    }, 0);
+
+    // Aplicar margem de lucro
+    if (profitMargin > 0) {
+      total += total * (profitMargin / 100);
+    }
+
+    // Aplicar ajustes finais
+    if (adjustmentType === "increase") {
+      if (adjustmentValueType === "percentage") {
+        total += total * (adjustmentValue / 100);
+      } else {
+        total += adjustmentValue;
+      }
+    } else {
+      if (adjustmentValueType === "percentage") {
+        total -= total * (adjustmentValue / 100);
+      } else {
+        total -= adjustmentValue;
+      }
+    }
+
+    return total;
+  };
+
   return (
     <>
       <div className="max-w-3xl mx-auto w-full py-6">
@@ -1945,20 +2163,18 @@ export default function BudgetCompleteForm({
 
           <Button
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-2 ml-auto"
-            onClick={() => {
-              if (budgetStep === 1) {
-                setBudgetStep(2);
-                toast.success("Informações básicas salvas");
-              } else if (budgetStep === 2) {
-                setBudgetStep(3);
-                toast.success("Configurações salvas");
-              } else if (budgetStep === 3) {
-                setBudgetStep(4);
-                toast.success("Fases do projeto salvas");
-              }
-            }}
+            onClick={
+              budgetStep === 4
+                ? handleSubmitBudget
+                : () => setBudgetStep(budgetStep + 1)
+            }
+            disabled={isSubmitting}
           >
-            {budgetStep === 4 ? "Finalizar" : "Continuar"}
+            {isSubmitting
+              ? "Salvando..."
+              : budgetStep === 4
+              ? "Finalizar"
+              : "Continuar"}
           </Button>
         </div>
       </div>

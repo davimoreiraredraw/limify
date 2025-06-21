@@ -97,22 +97,20 @@ export const ExpensesTable = pgTable("expenses", {
 
 // Tabela de orçamentos
 export const budgets = pgTable("budgets", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   description: text("description"),
   client_id: uuid("client_id").references(() => clientsTable.id),
   model: text("model"), // Ex: "interior", "exterior"
   budget_type: text("budget_type"), // Ex: "m2", "completo"
   value_type: text("value_type"), // Ex: "individuais", "unico"
-  total: decimal("total", { precision: 12, scale: 2 }),
-  average_price_per_m2: decimal("average_price_per_m2", {
-    precision: 12,
-    scale: 2,
-  }),
-  discount: decimal("discount", { precision: 12, scale: 2 }),
+  total: numeric("total"),
+  average_price_per_m2: numeric("average_price_per_m2"),
+  discount: numeric("discount"),
   discount_type: text("discount_type"), // "percentual" ou "valor"
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
+  user_id: text("user_id").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // Tabela de itens do orçamento (ambientes)
@@ -306,3 +304,65 @@ export const aiMessagesHistory = pgTable(
     };
   }
 );
+
+// Tabela de fases do orçamento
+export const budgetPhases = pgTable("budget_phases", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  budget_id: uuid("budget_id").references(() => budgets.id, {
+    onDelete: "cascade",
+  }),
+  name: text("name").notNull(),
+  description: text("description"),
+  base_value: decimal("base_value", { precision: 12, scale: 2 }),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tabela de segmentos das fases
+export const budgetSegments = pgTable("budget_segments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  phase_id: uuid("phase_id").references(() => budgetPhases.id, {
+    onDelete: "cascade",
+  }),
+  name: text("name").notNull(),
+  description: text("description"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tabela de atividades
+export const budgetActivities = pgTable("budget_activities", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  phase_id: uuid("phase_id").references(() => budgetPhases.id, {
+    onDelete: "cascade",
+  }),
+  segment_id: uuid("segment_id").references(() => budgetSegments.id, {
+    onDelete: "cascade",
+  }),
+  name: text("name").notNull(),
+  description: text("description"),
+  time: decimal("time", { precision: 12, scale: 2 }), // Tempo em horas
+  cost_per_hour: decimal("cost_per_hour", { precision: 12, scale: 2 }),
+  total_cost: decimal("total_cost", { precision: 12, scale: 2 }),
+  complexity: integer("complexity"), // 1-5
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tabela de valores adicionais do orçamento
+export const budgetAdditionals = pgTable("budget_additionals", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  budget_id: uuid("budget_id").references(() => budgets.id, {
+    onDelete: "cascade",
+  }),
+  wet_area_quantity: integer("wet_area_quantity"),
+  dry_area_quantity: integer("dry_area_quantity"),
+  wet_area_percentage: decimal("wet_area_percentage", {
+    precision: 5,
+    scale: 2,
+  }),
+  delivery_time: integer("delivery_time"), // Em dias
+  disable_delivery_charge: boolean("disable_delivery_charge").default(false),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
