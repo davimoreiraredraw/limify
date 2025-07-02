@@ -41,7 +41,12 @@ export async function GET() {
     const budgetsThisMonth = await db
       .select({ count: sql<number>`count(*)` })
       .from(budgets)
-      .where(sql`${budgets.created_at} >= ${firstDayOfMonth}`);
+      .where(
+        and(
+          sql`${budgets.created_at} >= ${firstDayOfMonth}`,
+          eq(budgets.user_id, userId)
+        )
+      );
 
     // Buscar projetos fechados (status = completed) do mês atual
     const completedProjectsThisMonth = await db
@@ -59,7 +64,12 @@ export async function GET() {
     const revenueThisMonth = await db
       .select({ total: sql<number>`sum(${budgets.total})` })
       .from(budgets)
-      .where(sql`${budgets.created_at} >= ${firstDayOfMonth}`);
+      .where(
+        and(
+          sql`${budgets.created_at} >= ${firstDayOfMonth}`,
+          eq(budgets.user_id, userId)
+        )
+      );
 
     // Buscar gastos fixos do mês atual
     const fixedExpensesThisMonth = await db

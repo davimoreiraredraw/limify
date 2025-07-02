@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { budgets, clientsTable } from "@/lib/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, and } from "drizzle-orm";
 
 export async function GET() {
   try {
@@ -33,7 +33,9 @@ export async function GET() {
       );
     }
 
-    // Buscar os últimos 5 orçamentos
+    const userId = session.user.id;
+
+    // Buscar os últimos 5 orçamentos do usuário
     const latestBudgets = await db
       .select({
         id: budgets.id,
@@ -44,6 +46,7 @@ export async function GET() {
       })
       .from(budgets)
       .leftJoin(clientsTable, eq(clientsTable.id, budgets.client_id))
+      .where(eq(budgets.user_id, userId))
       .orderBy(desc(budgets.created_at))
       .limit(5);
 
