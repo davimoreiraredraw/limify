@@ -97,31 +97,54 @@ export const ExpensesTable = pgTable("expenses", {
 
 // Tabela de orçamentos
 export const budgets = pgTable("budgets", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
   client_id: uuid("client_id").references(() => clientsTable.id),
-  model: text("model"), // Ex: "interior", "exterior"
-  budget_type: text("budget_type"), // Ex: "m2", "completo"
-  value_type: text("value_type"), // Ex: "individuais", "unico"
-  total: numeric("total"),
-  average_price_per_m2: numeric("average_price_per_m2"),
-  discount: numeric("discount"),
-  discount_type: text("discount_type"), // "percentual" ou "valor"
+  model: text("model"), // interior ou exterior
+  budget_type: text("budget_type").notNull(), // complete, render, etc
+  value_type: text("value_type"), // individual ou unico
+  total: decimal("total", { precision: 10, scale: 2 }).default("0"),
   user_id: text("user_id").notNull(),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
+  average_price_per_m2: decimal("average_price_per_m2", {
+    precision: 10,
+    scale: 2,
+  }),
+  discount: decimal("discount", { precision: 10, scale: 2 }),
+  discount_type: text("discount_type"),
+  // Campos específicos para orçamentos de render
+  base_value: decimal("base_value", { precision: 10, scale: 2 }),
+  complexity_percentage: decimal("complexity_percentage", {
+    precision: 5,
+    scale: 2,
+  }),
+  delivery_time_percentage: decimal("delivery_time_percentage", {
+    precision: 5,
+    scale: 2,
+  }),
+  delivery_time_days: integer("delivery_time_days"),
 });
 
 // Tabela de itens do orçamento (ambientes)
 export const budgetItems = pgTable("budget_items", {
   id: uuid("id").defaultRandom().primaryKey(),
-  budget_id: uuid("budget_id").references(() => budgets.id),
+  budget_id: uuid("budget_id")
+    .references(() => budgets.id)
+    .notNull(),
   name: text("name").notNull(),
   description: text("description"),
+  // Campos para orçamentos por m²
   price_per_m2: decimal("price_per_m2", { precision: 12, scale: 2 }),
   square_meters: decimal("square_meters", { precision: 12, scale: 2 }),
-  total: decimal("total", { precision: 12, scale: 2 }),
+  // Campos específicos para orçamentos de render
+  development_time: integer("development_time"),
+  images_quantity: integer("images_quantity"),
+  complexity_level: text("complexity_level"), // sem, baixa, media, alta
+  total: decimal("total", { precision: 10, scale: 2 }).default("0"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // Tabela de projetos de referência do orçamento

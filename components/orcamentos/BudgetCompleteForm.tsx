@@ -14,11 +14,13 @@ import LimifyLucroPuppet from "@/public/limify_lucro_puppet.png";
 import SegmentModal from "./SegmentModal";
 import ActivityModal from "./ActivityModal";
 import PhaseModal from "./PhaseModal";
+import { fi } from "date-fns/locale";
 
 interface BudgetCompleteFormProps {
   budgetStep: number;
   setBudgetStep: Dispatch<SetStateAction<number>>;
   selectedBudgetType: string | null;
+  finishBudget: () => void;
 }
 
 interface Activity {
@@ -51,6 +53,7 @@ export default function BudgetCompleteForm({
   budgetStep,
   setBudgetStep,
   selectedBudgetType,
+  finishBudget,
 }: BudgetCompleteFormProps) {
   const [clientName, setClientName] = useState("");
   const [projectName, setProjectName] = useState("");
@@ -660,8 +663,11 @@ export default function BudgetCompleteForm({
   };
 
   // Função para selecionar um orçamento anterior
-  const handleSelectPreviousBudget = async (budgetId: string) => {
+  const handleSelectPreviousBudget = async (budget: any) => {
     try {
+      const budgetId = budget.id;
+      setSearchBudget(budget.name);
+      setShowBudgetList(false);
       const response = await fetch(`/api/budgets/complete/${budgetId}`);
       const data = await response.json();
       if (data.success) {
@@ -669,6 +675,7 @@ export default function BudgetCompleteForm({
         setPreviousBudgetName(data.budget.name);
         setSelectedBudgetId(budgetId);
         setShowBudgetList(false);
+        console.log(data.budget);
       }
     } catch (error) {
       console.error("Erro ao carregar orçamento:", error);
@@ -946,6 +953,7 @@ export default function BudgetCompleteForm({
                           }}
                           onFocus={() => setShowBudgetList(true)}
                         />
+
                         {showBudgetList && (
                           <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                             {previousBudgets
@@ -963,7 +971,7 @@ export default function BudgetCompleteForm({
                                       : ""
                                   }`}
                                   onClick={() =>
-                                    handleSelectPreviousBudget(budget.id)
+                                    handleSelectPreviousBudget(budget)
                                   }
                                 >
                                   <div className="font-medium">
@@ -2063,7 +2071,7 @@ export default function BudgetCompleteForm({
 
       if (data.success) {
         toast.success("Orçamento criado com sucesso!");
-        router.push("/dashboard/orcamentos");
+        finishBudget();
       } else {
         throw new Error(data.error || "Erro ao criar orçamento");
       }

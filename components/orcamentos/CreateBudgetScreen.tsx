@@ -5,6 +5,8 @@ import { Dispatch, SetStateAction, useState } from "react";
 import BudgetTypes from "./BudgetTypes";
 import BudgetM2Form from "./BudgetFormSteps";
 import BudgetCompleteForm from "./BudgetCompleteForm";
+import BudgetRenderForm from "./BudgetRenderForm";
+import BudgetModelingForm from "./BudgetModelingForm";
 
 interface CreateBudgetScreenProps {
   isCreatingBudget: boolean;
@@ -23,6 +25,12 @@ export default function CreateBudgetScreen({
   budgetStep,
   setBudgetStep,
 }: CreateBudgetScreenProps) {
+  const finishBudget = () => {
+    setIsCreatingBudget(false);
+    setBudgetStep(0);
+    setSelectedBudgetType(null);
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex justify-between items-center">
@@ -94,20 +102,37 @@ export default function CreateBudgetScreen({
           budgetStep={budgetStep}
           setBudgetStep={setBudgetStep}
           selectedBudgetType={selectedBudgetType}
+          finishBudget={finishBudget}
         />
       ) : selectedBudgetType === "complete" ? (
         <BudgetCompleteForm
           budgetStep={budgetStep}
           setBudgetStep={setBudgetStep}
           selectedBudgetType={selectedBudgetType}
+          finishBudget={finishBudget}
+        />
+      ) : selectedBudgetType === "render" ? (
+        <BudgetRenderForm
+          budgetStep={budgetStep}
+          setBudgetStep={setBudgetStep}
+          selectedBudgetType={selectedBudgetType}
+          finishBudget={finishBudget}
+        />
+      ) : selectedBudgetType === "modeling" ? (
+        <BudgetModelingForm
+          budgetStep={budgetStep}
+          setBudgetStep={setBudgetStep}
+          selectedBudgetType={selectedBudgetType}
+          finishBudget={finishBudget}
         />
       ) : (
         <div className="max-w-3xl mx-auto w-full py-6 text-center">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-2">Em desenvolvimento</h2>
+            <h2 className="text-3xl font-bold mb-2">Quase lá</h2>
             <p className="text-gray-500">
-              Esta modalidade de orçamento está em desenvolvimento e estará
-              disponível em breve.
+              Esta modalidade de orçamento está em desenvolvimento do novo
+              recurso de planilha de obras e estará disponível aproximadamente
+              dia 30 de junho.
             </p>
           </div>
 

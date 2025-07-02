@@ -10,6 +10,9 @@ import { useClients } from "@/lib/hooks/useClients";
 import ClientsModal from "./ClientsModal";
 import type { Client } from "@/app/(dashboard)/dashboard/orcamentos/types";
 import { useRouter } from "next/navigation";
+import OrcamentoRenderItemSidebar, {
+  OrcamentoRenderItem,
+} from "./OrcamentoRenderItemSidebar";
 
 interface BudgetFormStepsProps {
   budgetStep: number;
@@ -23,12 +26,13 @@ interface BudgetItem {
   id: string;
   name: string;
   description: string;
-  pricePerSquareMeter: number;
-  squareMeters: number;
+  tempoDesenvolvimento: number;
+  quantidadeImagens: number;
+  grauComplexidade: "sem" | "baixa" | "media" | "alta";
   total: number;
 }
 
-export default function BudgetM2Form({
+export default function BudgetRenderForm({
   budgetStep,
   setBudgetStep,
   selectedBudgetType,
@@ -70,25 +74,28 @@ export default function BudgetM2Form({
       id: "1",
       name: "Sala",
       description: "Projeto da sala completo conforme solicitado",
-      pricePerSquareMeter: 150,
-      squareMeters: 10,
-      total: 1500,
+      tempoDesenvolvimento: 2,
+      quantidadeImagens: 2,
+      grauComplexidade: "baixa",
+      total: 720,
     },
     {
       id: "2",
       name: "Fachada",
       description: "Fazer letreiro",
-      pricePerSquareMeter: 150,
-      squareMeters: 2,
-      total: 300,
+      tempoDesenvolvimento: 1,
+      quantidadeImagens: 1,
+      grauComplexidade: "sem",
+      total: 150,
     },
     {
       id: "3",
       name: "Cozinha",
       description: "Refazer a pia",
-      pricePerSquareMeter: 200,
-      squareMeters: 4,
-      total: 800,
+      tempoDesenvolvimento: 3,
+      quantidadeImagens: 2,
+      grauComplexidade: "media",
+      total: 1350,
     },
   ]);
 
@@ -114,6 +121,14 @@ export default function BudgetM2Form({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const router = useRouter();
+
+  // Adicione estes estados no início do componente, junto com os outros
+  const [selectedComplexidade, setSelectedComplexidade] = useState<
+    number | null
+  >(null);
+  const [selectedPrazo, setSelectedPrazo] = useState<number | null>(null);
+  const [showAcrescimos, setShowAcrescimos] = useState(true);
+  const [deliveryTimeDays, setDeliveryTimeDays] = useState("");
 
   useEffect(() => {
     fetchClients();
@@ -170,14 +185,14 @@ export default function BudgetM2Form({
 
   // Calcular o preço médio por m²
   const calculateAveragePricePerSqm = () => {
-    const totalSqm = budgetItems.reduce(
-      (sum, item) => sum + item.squareMeters,
+    const totalHoras = budgetItems.reduce(
+      (sum, item) => sum + item.tempoDesenvolvimento,
       0
     );
     const totalPrice = budgetItems.reduce((sum, item) => sum + item.total, 0);
 
-    if (totalSqm === 0) return 0;
-    return totalPrice / totalSqm;
+    if (totalHoras === 0) return 0;
+    return totalPrice / totalHoras;
   };
 
   // Calcular o preço total quando a metragem ou o preço por m² mudar
@@ -209,13 +224,14 @@ export default function BudgetM2Form({
   };
 
   // Função para salvar um item novo ou editado
-  const handleSaveItem = (item: OrcamentoItem) => {
+  const handleSaveItem = (item: OrcamentoRenderItem) => {
     const newItem: BudgetItem = {
       id: item.id || Date.now().toString(),
       name: item.nome,
       description: item.descricao,
-      pricePerSquareMeter: item.valorM2,
-      squareMeters: item.quantidadeM2,
+      tempoDesenvolvimento: item.tempoDesenvolvimento,
+      quantidadeImagens: item.quantidadeImagens,
+      grauComplexidade: item.grauComplexidade,
       total: item.total,
     };
 
@@ -247,39 +263,58 @@ export default function BudgetM2Form({
         description: projectDescription,
         client_id:
           selectedClientOption === "existing" && clientId ? clientId : null,
-        model: tipoAmbiente,
-        budget_type: selectedBudgetType,
-        value_type: valorComodos,
+        model: tipoAmbiente, // interior ou exterior
+        value_type: valorComodos, // individual ou unico
         total: calculateTotalBudget(),
-        average_price_per_m2: calculateAveragePricePerSqm(),
-        discount: opcaoAjusteValor === "desconto" ? desconto : 0,
-        discount_type: tipoDesconto,
+        base_value: calculateTotalBudget(), // valor base sem acréscimos
+        complexity_percentage: selectedComplexidade || 0,
+        delivery_time_percentage: selectedPrazo || 0,
+        delivery_time_days: parseInt(deliveryTimeDays) || 0,
+        final_value: calculateFinalValue(), // valor final com acréscimos
         items: budgetItems.map((item) => ({
           name: item.name,
           description: item.description,
-          pricePerSquareMeter: item.pricePerSquareMeter,
-          squareMeters: item.squareMeters,
+          development_time: item.tempoDesenvolvimento,
+          images_quantity: item.quantidadeImagens,
+          complexity_level: item.grauComplexidade,
           total: item.total,
         })),
         references: selectedReferences,
       };
-      const res = await fetch("/api/budgets", {
+
+      const res = await fetch("/api/budgets/render", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success("Orçamento salvo com sucesso!");
+        toast.success("Orçamento criado com sucesso!");
         finishBudget();
       } else {
-        toast.error(data.error || "Erro ao salvar orçamento");
+        toast.error(data.error || "Erro ao criar orçamento");
       }
     } catch (err) {
-      toast.error("Erro ao salvar orçamento");
+      toast.error("Erro ao criar orçamento. Tente novamente.");
+      console.error("Erro ao salvar orçamento:", err);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Função para calcular o valor final com acréscimos
+  const calculateFinalValue = () => {
+    const baseValue = calculateTotalBudget();
+    if (!showAcrescimos) return baseValue;
+
+    const complexidadePercent = selectedComplexidade || 0;
+    const prazoPercent = selectedPrazo || 0;
+
+    const complexidadeValue = (baseValue * complexidadePercent) / 100;
+    const prazoValue = (baseValue * prazoPercent) / 100;
+
+    return baseValue + complexidadeValue + prazoValue;
   };
 
   const renderStepContent = () => {
@@ -617,8 +652,12 @@ export default function BudgetM2Form({
             </h2>
 
             <div className="mb-10">
+              <h2 className="text-2xl font-bold mb-6">
+                Adicione os itens do seu orçamento
+              </h2>
+
               <button
-                className="bg-indigo-900 text-white flex items-center gap-2 px-4 py-3 rounded-lg"
+                className="bg-indigo-900 text-white flex items-center gap-2 px-4 py-3 rounded-lg mb-6"
                 onClick={addNewItem}
               >
                 <svg
@@ -639,85 +678,366 @@ export default function BudgetM2Form({
                 </svg>
                 Adicionar ambiente
               </button>
-            </div>
 
-            {/* Tabela de itens - estilo Figma */}
-            <div className="mb-12">
-              {/* Cabeçalho da tabela */}
-              <div className="grid grid-cols-12 gap-4 pb-3 text-sm font-medium text-gray-600 border-b">
-                <div className="col-span-5">Nome</div>
-                <div className="col-span-2 text-right">Valor m²</div>
-                <div className="col-span-2 text-right">Quantidade de m²</div>
-                <div className="col-span-2 text-right">Total</div>
-                <div className="col-span-1 text-right">Ações</div>
-              </div>
+              <div className="bg-white rounded-lg border border-gray-200">
+                {/* Cabeçalho da tabela */}
+                <div className="grid grid-cols-[2fr,1fr,1fr,1fr,1fr,0.5fr] gap-4 p-4 text-sm font-medium text-gray-600 border-b">
+                  <div>Nome</div>
+                  <div>Tempo para desenvolver</div>
+                  <div>Quantidade de imagens</div>
+                  <div>Custo imagem</div>
+                  <div>Custo Total</div>
+                  <div>Ações</div>
+                </div>
 
-              {/* Itens da tabela */}
-              {budgetItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="grid grid-cols-12 gap-4 py-6 border-b items-center"
-                >
-                  <div className="col-span-5">
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-sm text-gray-500">
-                      {item.description}
+                {/* Itens da tabela */}
+                {budgetItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="grid grid-cols-[2fr,1fr,1fr,1fr,1fr,0.5fr] gap-4 p-4 border-b items-center text-sm"
+                  >
+                    <div>
+                      <div className="font-medium">{item.name}</div>
+                      <div className="text-gray-500 text-sm mt-1">
+                        {item.description}
+                      </div>
+                    </div>
+                    <div>{item.tempoDesenvolvimento}h</div>
+                    <div>{item.quantidadeImagens}</div>
+                    <div>
+                      {formatCurrency(item.total / item.quantidadeImagens)}
+                    </div>
+                    <div className="font-medium">
+                      {formatCurrency(item.total)}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        className="text-red-500 hover:text-red-700"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 15 15"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M5.5 1C5.22386 1 5 1.22386 5 1.5C5 1.77614 5.22386 2 5.5 2H9.5C9.77614 2 10 1.77614 10 1.5C10 1.22386 9.77614 1 9.5 1H5.5ZM3 3.5C3 3.22386 3.22386 3 3.5 3H11.5C11.7761 3 12 3.22386 12 3.5C12 3.77614 11.7761 4 11.5 4H3.5C3.22386 4 3 3.77614 3 3.5ZM4.5 5C4.77614 5 5 5.22386 5 5.5V10.5C5 10.7761 4.77614 11 4.5 11C4.22386 11 4 10.7761 4 10.5V5.5C4 5.22386 4.22386 5 4.5 5ZM7.5 5C7.77614 5 8 5.22386 8 5.5V10.5C8 10.7761 7.77614 11 7.5 11C7.22386 11 7 10.7761 7 10.5V5.5C7 5.22386 7.22386 5 7.5 5ZM10.5 5C10.7761 5 11 5.22386 11 5.5V10.5C11 10.7761 10.7761 11 10.5 11C10.2239 11 10 10.7761 10 10.5V5.5C10 5.22386 10.2239 5 10.5 5Z"
+                            fill="currentColor"
+                            fillRule="evenodd"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        className="text-indigo-600 hover:text-indigo-800"
+                        onClick={() => editItem(item)}
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 15 15"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M11.8536 1.14645C11.6583 0.951184 11.3417 0.951184 11.1465 1.14645L3.71455 8.57836C3.62459 8.66832 3.55263 8.77461 3.50251 8.89155L2.04044 12.303C1.9599 12.491 2.00189 12.709 2.14646 12.8536C2.29103 12.9981 2.50905 13.0401 2.69697 12.9596L6.10847 11.4975C6.2254 11.4474 6.3317 11.3754 6.42166 11.2855L13.8536 3.85355C14.0488 3.65829 14.0488 3.34171 13.8536 3.14645L11.8536 1.14645ZM4.42166 9.28547L11.5 2.20711L12.7929 3.5L5.71455 10.5784L4.21924 11.2192L3.78081 10.7808L4.42166 9.28547Z"
+                            fill="currentColor"
+                            fillRule="evenodd"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-                  <div className="col-span-2 text-right">
-                    {formatCurrency(item.pricePerSquareMeter)}
-                  </div>
-                  <div className="col-span-2 text-right">
-                    {item.squareMeters} m²
-                  </div>
-                  <div className="col-span-2 text-right font-bold">
-                    {formatCurrency(item.total)}
-                  </div>
-                  <div className="col-span-1 flex justify-end space-x-3">
-                    <button
-                      className="text-red-500"
-                      onClick={() => removeItem(item.id)}
+                ))}
+              </div>
+
+              {/* Campo de prazo de entrega */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between bg-[#F8F7FF] border border-[#C084FC] rounded-lg p-4">
+                  <div className="text-sm font-medium">Prazo de entrega</div>
+                  <div className="relative flex items-center">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 15 15"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="absolute left-3 text-gray-400"
                     >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 15 15"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
+                      <path
+                        d="M7.5 1C3.91015 1 1 3.91015 1 7.5C1 11.0899 3.91015 14 7.5 14C11.0899 14 14 11.0899 14 7.5C14 3.91015 11.0899 1 7.5 1ZM7.5 2C10.5376 2 13 4.46243 13 7.5C13 10.5376 10.5376 13 7.5 13C4.46243 13 2 10.5376 2 7.5C2 4.46243 4.46243 2 7.5 2ZM7 4V7.5C7 7.7455 7.17001 7.9496 7.40279 7.99239L10.4028 8.74239C10.7026 8.80657 11 8.5842 11 8.27735V7.72265C11 7.47161 10.8273 7.25169 10.5972 7.18761L8 6.54V4C8 3.72386 7.77614 3.5 7.5 3.5C7.22386 3.5 7 3.72386 7 4Z"
+                        fill="currentColor"
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Dias para entregar"
+                      className="pl-10 pr-4 py-1.5 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg w-[180px] focus:outline-none focus:border-[#C084FC] focus:ring-1 focus:ring-[#C084FC]"
+                      value={deliveryTimeDays}
+                      onChange={(e) => setDeliveryTimeDays(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tabelas de Complexidade e Prazo */}
+            <div className="mb-12">
+              <p className="text-gray-700 mb-8 text-base">
+                Prazo e complexidade são definem os acréscimos, no Limify
+                definimos um valor padrão, mas você deve ajustar conforme as
+                suas exigências
+              </p>
+
+              <div className="grid grid-cols-2 gap-12">
+                {/* Tabela de Complexidade */}
+                <div>
+                  <h3 className="font-medium mb-4 text-base">Complexidade</h3>
+                  <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                    <div className="grid grid-cols-[1fr,1.2fr,1fr] py-4 px-6 text-sm text-gray-600 bg-gray-50">
+                      <div>Nível</div>
+                      <div>Complexidade</div>
+                      <div>Porcentagem</div>
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                      <div
+                        className={`grid grid-cols-[1fr,1.2fr,1fr] py-4 px-6 text-sm items-center cursor-pointer hover:bg-gray-50 ${
+                          selectedComplexidade === 0 ? "bg-indigo-50" : ""
+                        }`}
+                        onClick={() => setSelectedComplexidade(0)}
                       >
-                        <path
-                          d="M5.5 1C5.22386 1 5 1.22386 5 1.5C5 1.77614 5.22386 2 5.5 2H9.5C9.77614 2 10 1.77614 10 1.5C10 1.22386 9.77614 1 9.5 1H5.5ZM3 3.5C3 3.22386 3.22386 3 3.5 3H11.5C11.7761 3 12 3.22386 12 3.5C12 3.77614 11.7761 4 11.5 4H3.5C3.22386 4 3 3.77614 3 3.5ZM4.5 5C4.77614 5 5 5.22386 5 5.5V10.5C5 10.7761 4.77614 11 4.5 11C4.22386 11 4 10.7761 4 10.5V5.5C4 5.22386 4.22386 5 4.5 5ZM7.5 5C7.77614 5 8 5.22386 8 5.5V10.5C8 10.7761 7.77614 11 7.5 11C7.22386 11 7 10.7761 7 10.5V5.5C7 5.22386 7.22386 5 7.5 5ZM10.5 5C10.7761 5 11 5.22386 11 5.5V10.5C11 10.7761 10.7761 11 10.5 11C10.2239 11 10 10.7761 10 10.5V5.5C10 5.22386 10.2239 5 10.5 5Z"
-                          fill="currentColor"
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                        ></path>
-                      </svg>
-                    </button>
-                    <button
-                      className="text-indigo-600"
-                      onClick={() => editItem(item)}
-                    >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 15 15"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
+                        <div>1</div>
+                        <div>Sem complexidade</div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value="0"
+                            className="w-12 pr-4 py-1 text-right bg-transparent"
+                            readOnly
+                          />
+                          <span className="absolute right-0 top-1/2 -translate-y-1/2">
+                            %
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className={`grid grid-cols-[1fr,1.2fr,1fr] py-4 px-6 text-sm items-center cursor-pointer hover:bg-gray-50 ${
+                          selectedComplexidade === 10 ? "bg-indigo-50" : ""
+                        }`}
+                        onClick={() => setSelectedComplexidade(10)}
                       >
-                        <path
-                          d="M11.8536 1.14645C11.6583 0.951184 11.3417 0.951184 11.1465 1.14645L3.71455 8.57836C3.62459 8.66832 3.55263 8.77461 3.50251 8.89155L2.04044 12.303C1.9599 12.491 2.00189 12.709 2.14646 12.8536C2.29103 12.9981 2.50905 13.0401 2.69697 12.9596L6.10847 11.4975C6.2254 11.4474 6.3317 11.3754 6.42166 11.2855L13.8536 3.85355C14.0488 3.65829 14.0488 3.34171 13.8536 3.14645L11.8536 1.14645ZM4.42166 9.28547L11.5 2.20711L12.7929 3.5L5.71455 10.5784L4.21924 11.2192L3.78081 10.7808L4.42166 9.28547Z"
-                          fill="currentColor"
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                        ></path>
-                      </svg>
+                        <div>2</div>
+                        <div>Um pouco complexo</div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value="10"
+                            className="w-12 pr-4 py-1 text-right bg-transparent"
+                            readOnly
+                          />
+                          <span className="absolute right-0 top-1/2 -translate-y-1/2">
+                            %
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className={`grid grid-cols-[1fr,1.2fr,1fr] py-4 px-6 text-sm items-center cursor-pointer hover:bg-gray-50 ${
+                          selectedComplexidade === 20 ? "bg-indigo-50" : ""
+                        }`}
+                        onClick={() => setSelectedComplexidade(20)}
+                      >
+                        <div>3</div>
+                        <div>Complexo</div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value="20"
+                            className="w-12 pr-4 py-1 text-right bg-transparent"
+                            readOnly
+                          />
+                          <span className="absolute right-0 top-1/2 -translate-y-1/2">
+                            %
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className={`grid grid-cols-[1fr,1.2fr,1fr] py-4 px-6 text-sm items-center cursor-pointer hover:bg-gray-50 ${
+                          selectedComplexidade === 30 ? "bg-indigo-50" : ""
+                        }`}
+                        onClick={() => setSelectedComplexidade(30)}
+                      >
+                        <div>4</div>
+                        <div>Alta complexidade</div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value="30"
+                            className="w-12 pr-4 py-1 text-right bg-transparent"
+                            readOnly
+                          />
+                          <span className="absolute right-0 top-1/2 -translate-y-1/2">
+                            %
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <button className="inline-flex items-center gap-2 text-sm text-[#6366F1] bg-[#EEF2FF] rounded-lg px-4 py-2">
+                      <span className="text-[#6366F1]">$</span>
+                      400 Reais
                     </button>
                   </div>
                 </div>
-              ))}
+
+                {/* Tabela de Prazo de entrega */}
+                <div>
+                  <h3 className="font-medium mb-4 text-base">
+                    Prazo de entrega
+                  </h3>
+                  <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                    <div className="grid grid-cols-[1fr,1.2fr,1fr] py-4 px-6 text-sm text-gray-600 bg-gray-50">
+                      <div>Dias</div>
+                      <div>Urgência</div>
+                      <div>Porcentagem</div>
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                      <div
+                        className={`grid grid-cols-[1fr,1.2fr,1fr] py-4 px-6 text-sm items-center cursor-pointer hover:bg-gray-50 ${
+                          selectedPrazo === 0 ? "bg-indigo-50" : ""
+                        }`}
+                        onClick={() => setSelectedPrazo(0)}
+                      >
+                        <div>+de 9</div>
+                        <div>Sem urgência</div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value="0"
+                            className="w-12 pr-4 py-1 text-right bg-transparent"
+                            readOnly
+                          />
+                          <span className="absolute right-0 top-1/2 -translate-y-1/2">
+                            %
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className={`grid grid-cols-[1fr,1.2fr,1fr] py-4 px-6 text-sm items-center cursor-pointer hover:bg-gray-50 ${
+                          selectedPrazo === 10 ? "bg-indigo-50" : ""
+                        }`}
+                        onClick={() => setSelectedPrazo(10)}
+                      >
+                        <div>6 a 8</div>
+                        <div>Normal</div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value="10"
+                            className="w-12 pr-4 py-1 text-right bg-transparent"
+                            readOnly
+                          />
+                          <span className="absolute right-0 top-1/2 -translate-y-1/2">
+                            %
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className={`grid grid-cols-[1fr,1.2fr,1fr] py-4 px-6 text-sm items-center cursor-pointer hover:bg-gray-50 ${
+                          selectedPrazo === 20 ? "bg-indigo-50" : ""
+                        }`}
+                        onClick={() => setSelectedPrazo(20)}
+                      >
+                        <div>4 a 5</div>
+                        <div>Urgente</div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value="20"
+                            className="w-12 pr-4 py-1 text-right bg-transparent"
+                            readOnly
+                          />
+                          <span className="absolute right-0 top-1/2 -translate-y-1/2">
+                            %
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className={`grid grid-cols-[1fr,1.2fr,1fr] py-4 px-6 text-sm items-center cursor-pointer hover:bg-gray-50 ${
+                          selectedPrazo === 30 ? "bg-indigo-50" : ""
+                        }`}
+                        onClick={() => setSelectedPrazo(30)}
+                      >
+                        <div>0 a 3</div>
+                        <div>Extremamente urgente</div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value="30"
+                            className="w-12 pr-4 py-1 text-right bg-transparent"
+                            readOnly
+                          />
+                          <span className="absolute right-0 top-1/2 -translate-y-1/2">
+                            %
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <button className="inline-flex items-center gap-2 text-sm text-[#6366F1] bg-[#EEF2FF] rounded-lg px-4 py-2">
+                      <span className="text-[#6366F1]">$</span>
+                      400 Reais
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Ajuste de valores - layout Figma */}
+            {/* Valores finais após as tabelas */}
+            <div className="mt-8">
+              <h3 className="text-lg font-medium mb-4">Valores finais</h3>
+              <div className="flex gap-6">
+                <div
+                  className={`p-6 border rounded-xl cursor-pointer transition-all ${
+                    !showAcrescimos
+                      ? "border-indigo-500 bg-indigo-50"
+                      : "border-gray-200"
+                  }`}
+                  onClick={() => setShowAcrescimos(false)}
+                >
+                  <div className="text-sm text-gray-600 mb-2">
+                    Custo final sem acréscimo
+                  </div>
+                  <div className="text-2xl font-bold">
+                    R$ {calculateTotalBudget().toLocaleString("pt-BR")}
+                  </div>
+                </div>
+
+                <div
+                  className={`p-6 border rounded-xl cursor-pointer transition-all ${
+                    showAcrescimos
+                      ? "border-indigo-500 bg-indigo-50"
+                      : "border-gray-200"
+                  }`}
+                  onClick={() => setShowAcrescimos(true)}
+                >
+                  <div className="text-sm text-gray-600 mb-2">
+                    Valor final com prazo e complexidade
+                  </div>
+                  <div className="text-2xl font-bold">
+                    R$ {calculateFinalValue().toLocaleString("pt-BR")}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Ajuste de valores */}
             <h3 className="text-2xl font-bold mb-6">
               Ajuste de valores (Opcional)
             </h3>
@@ -837,36 +1157,30 @@ export default function BudgetM2Form({
               </div>
             </div>
 
-            {/* Resumo final - layout Figma */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 bg-gray-50 rounded-md">
-                <h4 className="text-sm text-gray-500 mb-2">
-                  Preço médio do m²
-                </h4>
-                <p className="text-3xl font-bold">
+            {/* Valores finais */}
+            <div className="flex flex-col md:flex-row gap-6 justify-center items-stretch">
+              <div className="flex-1 bg-white rounded-2xl p-8 flex flex-col items-center justify-center shadow-sm">
+                <span className="text-gray-500 text-lg mb-2">
+                  Valor médio por hora
+                </span>
+                <span className="text-4xl font-bold">
                   R$ {Math.round(calculateAveragePricePerSqm())}
-                </p>
+                </span>
               </div>
-
-              <div className="p-6 bg-indigo-50 rounded-md">
-                <h4 className="text-sm text-gray-500 mb-2">
+              <div className="flex-1 bg-indigo-50 rounded-2xl p-8 flex flex-col items-center justify-center border-2 border-indigo-200">
+                <span className="text-gray-500 text-lg mb-2">
                   Valor final do orçamento
-                </h4>
-                <p className="text-3xl font-bold text-indigo-700">
-                  R$ {Math.round(calculateTotalBudget())}
-                </p>
-                {opcaoAjusteValor === "adicionar" && adicionalValor > 0 && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    Adicional: R$ {adicionalValor}
-                  </p>
-                )}
+                </span>
+                <span className="text-4xl font-bold text-indigo-700">
+                  R$ {Math.round(calculateFinalValue())}
+                </span>
                 {opcaoAjusteValor === "desconto" && desconto > 0 && (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <span className="text-gray-500 text-base mt-2">
                     Desconto:{" "}
                     {tipoDesconto === "percentual"
                       ? `${desconto}%`
                       : `R$ ${desconto}`}
-                  </p>
+                  </span>
                 )}
               </div>
             </div>
@@ -879,10 +1193,10 @@ export default function BudgetM2Form({
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
               <div>
                 <span className="inline-block bg-indigo-100 text-indigo-700 text-xs font-semibold px-4 py-1 rounded-full mb-3">
-                  Orçamento #201
+                  Orçamento Render
                 </span>
                 <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                  Orçamento: {projectName || "Nome do projeto"}
+                  {projectName || "Nome do projeto"}
                 </h1>
                 <p className="text-gray-500 max-w-2xl">
                   {projectDescription || "Descrição do projeto não informada."}
@@ -926,11 +1240,12 @@ export default function BudgetM2Form({
                     Cliente
                   </div>
                   <div className="text-xl font-bold mb-1">
-                    {clientName || "Nome do cliente"}
+                    {clientName || "Cliente não selecionado"}
                   </div>
                   <div className="text-gray-400 text-sm">
-                    Laborum mollit enim duis mollit aute elit voluptate laboris
-                    nisi.
+                    {selectedClientOption === "later"
+                      ? "Cliente será adicionado depois"
+                      : "Cliente selecionado para o orçamento"}
                   </div>
                 </div>
               </div>
@@ -966,11 +1281,14 @@ export default function BudgetM2Form({
                       ? "Interiores"
                       : tipoAmbiente === "exterior"
                       ? "Exteriores"
-                      : "Modelo"}
+                      : "Modelo não selecionado"}
                   </div>
                   <div className="text-gray-400 text-sm">
-                    Laborum mollit enim duis mollit aute elit voluptate laboris
-                    nisi.
+                    {tipoAmbiente === "interior"
+                      ? "Projeto de interiores com renders"
+                      : tipoAmbiente === "exterior"
+                      ? "Projeto de exteriores com renders"
+                      : "Selecione um modelo de projeto"}
                   </div>
                 </div>
               </div>
@@ -999,16 +1317,13 @@ export default function BudgetM2Form({
                 </div>
                 <div>
                   <div className="text-sm text-gray-500 font-medium mb-1">
-                    Modelo
+                    Tipo de Orçamento
                   </div>
                   <div className="text-xl font-bold mb-1">
-                    {selectedBudgetType === "m2"
-                      ? "Por metro quadrado"
-                      : "Outro modelo"}
+                    Orçamento por Render
                   </div>
                   <div className="text-gray-400 text-sm">
-                    Laborum mollit enim duis mollit aute elit voluptate laboris
-                    nisi.
+                    Orçamento baseado em tempo e complexidade
                   </div>
                 </div>
               </div>
@@ -1044,11 +1359,14 @@ export default function BudgetM2Form({
                       ? "Orçados individualmente"
                       : valorComodos === "unico"
                       ? "Valor único"
-                      : "Valores"}
+                      : "Tipo de valor não selecionado"}
                   </div>
                   <div className="text-gray-400 text-sm">
-                    Laborum mollit enim duis mollit aute elit voluptate laboris
-                    nisi.
+                    {valorComodos === "individuais"
+                      ? "Cada ambiente tem seu próprio valor"
+                      : valorComodos === "unico"
+                      ? "Um valor único para todo o projeto"
+                      : "Selecione como os valores serão calculados"}
                   </div>
                 </div>
               </div>
@@ -1064,10 +1382,9 @@ export default function BudgetM2Form({
                   <thead>
                     <tr className="text-gray-500 text-left">
                       <th className="px-6 py-4 font-semibold">Nome</th>
-                      <th className="px-6 py-4 font-semibold">Valor m²</th>
-                      <th className="px-6 py-4 font-semibold">
-                        Quantidade de m²
-                      </th>
+                      <th className="px-6 py-4 font-semibold">Tempo</th>
+                      <th className="px-6 py-4 font-semibold">Imagens</th>
+                      <th className="px-6 py-4 font-semibold">Complexidade</th>
                       <th className="px-6 py-4 font-semibold">Total</th>
                       <th className="px-6 py-4 font-semibold text-center">
                         Exibir?
@@ -1084,12 +1401,21 @@ export default function BudgetM2Form({
                           </div>
                         </td>
                         <td className="px-6 py-4 align-top">
-                          R$ {item.pricePerSquareMeter}
+                          {item.tempoDesenvolvimento}h
                         </td>
                         <td className="px-6 py-4 align-top">
-                          {item.squareMeters} m²
+                          {item.quantidadeImagens}
                         </td>
-                        <td className="px-6 py-4 align-top">R$ {item.total}</td>
+                        <td className="px-6 py-4 align-top">
+                          {item.grauComplexidade === "sem" &&
+                            "Sem complexidade"}
+                          {item.grauComplexidade === "baixa" && "Baixa"}
+                          {item.grauComplexidade === "media" && "Média"}
+                          {item.grauComplexidade === "alta" && "Alta"}
+                        </td>
+                        <td className="px-6 py-4 align-top">
+                          {formatCurrency(item.total)}
+                        </td>
                         <td className="px-6 py-4 align-top text-center">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -1112,136 +1438,89 @@ export default function BudgetM2Form({
               </div>
             </div>
 
-            {/* Resumo de valores */}
-            <div className="flex flex-col md:flex-row gap-6 justify-center items-stretch">
-              <div className="flex-1 bg-white rounded-2xl p-8 flex flex-col items-center justify-center shadow-sm">
-                <span className="text-gray-500 text-lg mb-2">
-                  Preço médio do m²
-                </span>
-                <span className="text-4xl font-bold">
-                  R$ {Math.round(calculateAveragePricePerSqm())}
-                </span>
-              </div>
-              <div className="flex-1 bg-indigo-50 rounded-2xl p-8 flex flex-col items-center justify-center border-2 border-indigo-200">
-                <span className="text-gray-500 text-lg mb-2">
-                  Valor final do orçamento
-                </span>
-                <span className="text-4xl font-bold text-indigo-700">
-                  R$ {Math.round(calculateTotalBudget())}
-                </span>
-                {opcaoAjusteValor === "desconto" && desconto > 0 && (
-                  <span className="text-gray-500 text-base mt-2">
-                    Desconto:{" "}
-                    {tipoDesconto === "percentual"
-                      ? `${desconto}%`
-                      : `R$ ${desconto}`}
-                  </span>
-                )}
+            {/* Informações de Prazo e Complexidade */}
+            <div className="mb-10">
+              <h2 className="text-2xl font-bold mb-6">Prazo e Complexidade</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border">
+                  <h3 className="text-lg font-semibold mb-4">
+                    Prazo de Entrega
+                  </h3>
+                  <div className="flex items-center gap-4 mb-2">
+                    <div className="text-gray-500">Dias para entrega:</div>
+                    <div className="font-medium">{deliveryTimeDays} dias</div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-gray-500">Acréscimo por prazo:</div>
+                    <div className="font-medium">{selectedPrazo}%</div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-sm border">
+                  <h3 className="text-lg font-semibold mb-4">Complexidade</h3>
+                  <div className="flex items-center gap-4">
+                    <div className="text-gray-500">
+                      Acréscimo por complexidade:
+                    </div>
+                    <div className="font-medium">{selectedComplexidade}%</div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Bloco de projetos de referência */}
-            <div className="mt-10">
-              <h2 className="text-xl font-bold mb-4">
-                Adicione projetos para exibir no orçamento
-              </h2>
-              <div className="flex flex-col md:flex-row gap-4 items-stretch">
-                {/* Opção principal */}
-                <div
-                  className={`flex-1 min-w-[380px] flex items-center gap-4 rounded-2xl border-2 ${
-                    true
-                      ? "border-indigo-400 bg-indigo-50"
-                      : "border-gray-200 bg-white"
-                  } p-4 transition-all`}
-                >
-                  <div className="flex flex-col min-w-[160px]">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="inline-block w-4 h-4 rounded-full border-2 border-indigo-700 flex items-center justify-center">
-                        <span className="w-2 h-2 rounded-full bg-indigo-700 block"></span>
-                      </span>
-                      <span className="font-semibold text-base">
-                        Projetos para exibir
-                      </span>
-                    </div>
-                    <span className="text-gray-500 text-xs">
-                      Adicione referências e exemplos de projetos
-                    </span>
+            {/* Valores Finais */}
+            <div className="mb-10">
+              <h2 className="text-2xl font-bold mb-6">Valores do Orçamento</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border">
+                  <h3 className="text-lg font-semibold mb-4">Valor Base</h3>
+                  <div className="text-2xl font-bold text-indigo-600">
+                    {formatCurrency(calculateTotalBudget())}
                   </div>
-                  <div className="flex-1">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        className="w-full border-2 border-indigo-300 rounded-xl px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                        placeholder="Busque seus projetos..."
-                        // onChange={...}
-                      />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-400">
-                        <svg
-                          width="18"
-                          height="18"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            d="M21 21l-4.35-4.35"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <circle
-                            cx="11"
-                            cy="11"
-                            r="7"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </span>
-                      {/* Tags de projetos selecionados (mock) */}
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {["Casa azul", "Render joão", "Item 03"].map((proj) => (
-                          <span
-                            key={proj}
-                            className="bg-white border border-indigo-200 rounded px-2 py-0.5 flex items-center gap-1 text-gray-700 text-xs"
-                          >
-                            {proj}
-                            <button className="ml-1 text-gray-400 hover:text-red-500">
-                              <svg
-                                width="12"
-                                height="12"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  d="M18 6L6 18M6 6l12 12"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                />
-                              </svg>
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    Valor sem acréscimos
                   </div>
                 </div>
-                {/* Opção adicionar depois */}
-                <div className="flex flex-col justify-center min-w-[180px] max-w-[220px] bg-white border border-gray-200 rounded-2xl p-4">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="inline-block w-4 h-4 rounded-full border-2 border-gray-400 flex items-center justify-center">
-                      <span className="w-2 h-2 rounded-full bg-white block"></span>
-                    </span>
-                    <span className="font-semibold text-base">
-                      Adicionar depois
-                    </span>
+
+                <div className="bg-white rounded-2xl p-6 shadow-sm border">
+                  <h3 className="text-lg font-semibold mb-4">Acréscimos</h3>
+                  <div className="text-2xl font-bold text-indigo-600">
+                    {formatCurrency(
+                      calculateFinalValue() - calculateTotalBudget()
+                    )}
                   </div>
-                  <span className="text-gray-500 text-xs">
-                    Quero deixar para depois ou nunca adicionar
-                  </span>
+                  <div className="text-sm text-gray-500 mt-1">
+                    Total de acréscimos aplicados
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-indigo-200 bg-indigo-50">
+                  <h3 className="text-lg font-semibold mb-4">Valor Final</h3>
+                  <div className="text-2xl font-bold text-indigo-600">
+                    {formatCurrency(calculateFinalValue())}
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    Valor final com todos os acréscimos
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Projetos de Referência */}
+            <div className="mb-10">
+              <h2 className="text-2xl font-bold mb-6">
+                Projetos de Referência
+              </h2>
+              <div className="bg-white rounded-2xl p-6 shadow-sm border">
+                <div className="flex flex-wrap gap-2">
+                  {selectedReferences.map((ref, index) => (
+                    <span
+                      key={index}
+                      className="bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-1.5 text-sm text-indigo-700"
+                    >
+                      {ref}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1327,7 +1606,7 @@ export default function BudgetM2Form({
       </div>
 
       {/* Sidebar de adição/edição de item */}
-      <OrcamentoItemSidebar
+      <OrcamentoRenderItemSidebar
         isOpen={isSidebarOpen}
         onClose={closeSidebar}
         onSave={handleSaveItem}
@@ -1337,8 +1616,9 @@ export default function BudgetM2Form({
                 id: editingItem.id,
                 nome: editingItem.name,
                 descricao: editingItem.description,
-                valorM2: editingItem.pricePerSquareMeter,
-                quantidadeM2: editingItem.squareMeters,
+                tempoDesenvolvimento: editingItem.tempoDesenvolvimento,
+                quantidadeImagens: editingItem.quantidadeImagens,
+                grauComplexidade: editingItem.grauComplexidade,
                 total: editingItem.total,
               }
             : undefined

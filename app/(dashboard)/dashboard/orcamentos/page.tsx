@@ -96,9 +96,14 @@ export default function OrcamentosPage() {
   ]);
 
   // Valores para os cards de resumo
-  const [faturamento, setFaturamento] = useState(10000);
-  const [gastosFixos, setGastosFixos] = useState(2000);
-  const [lucro, setLucro] = useState(8000);
+  const [faturamento, setFaturamento] = useState(0);
+  const [gastosFixos, setGastosFixos] = useState(0);
+  const [lucro, setLucro] = useState(0);
+  const [percentuais, setPercentuais] = useState({
+    faturamento: 0,
+    gastosFixos: 0,
+    lucro: 0,
+  });
 
   // Adicionar estado para controlar a visibilidade dos valores
   const [hiddenValues, setHiddenValues] = useState<Record<string, boolean>>({
@@ -267,6 +272,41 @@ export default function OrcamentosPage() {
       setOrcamentosCount(budgets.length);
     }
   }, [budgets]);
+
+  // Buscar estatísticas do dashboard
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await fetch("/api/dashboard/stats");
+      const data = await response.json();
+
+      if (data) {
+        const lucroCalculado = data.faturamento.value - data.gastosFixos.value;
+        const lucroAnterior =
+          data.faturamento.value * (1 - data.faturamento.percentage / 100) -
+          data.gastosFixos.value * (1 - data.gastosFixos.percentage / 100);
+        const variacaoLucro =
+          lucroAnterior !== 0
+            ? ((lucroCalculado - lucroAnterior) / Math.abs(lucroAnterior)) * 100
+            : 0;
+
+        setFaturamento(data.faturamento.value);
+        setGastosFixos(data.gastosFixos.value);
+        setLucro(lucroCalculado);
+        setPercentuais({
+          faturamento: data.faturamento.percentage,
+          gastosFixos: data.gastosFixos.percentage,
+          lucro: variacaoLucro,
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao buscar estatísticas:", error);
+      toast.error("Erro ao carregar estatísticas");
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
 
   // Manipular o drag and drop
   const onDragEnd = (result: any) => {
@@ -807,13 +847,13 @@ export default function OrcamentosPage() {
                   <div className="flex items-center gap-1">
                     <span className="text-lg">R$</span>
                     <span className="text-2xl font-medium">
-                      {formatCurrency(faturamento).replace("R$", "")}
+                      {formatCurrency(faturamento).slice(3)}
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 text-emerald-500 text-sm mt-1">
-                  <span>↑</span>
-                  <span>2.29%</span>
+                  <span>{percentuais.faturamento >= 0 ? "↑" : "↓"}</span>
+                  <span>{Math.abs(percentuais.faturamento).toFixed(2)}%</span>
                 </div>
               </div>
             </div>
@@ -827,13 +867,13 @@ export default function OrcamentosPage() {
                   <div className="flex items-center gap-1 text-red-500">
                     <span className="text-lg">R$ -</span>
                     <span className="text-2xl font-medium">
-                      {formatCurrency(gastosFixos).replace("R$", "")}
+                      {formatCurrency(gastosFixos).slice(3)}
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 text-emerald-500 text-sm mt-1">
-                  <span>↑</span>
-                  <span>2.29%</span>
+                  <span>{percentuais.gastosFixos >= 0 ? "↑" : "↓"}</span>
+                  <span>{Math.abs(percentuais.gastosFixos).toFixed(2)}%</span>
                 </div>
               </div>
             </div>
@@ -845,13 +885,13 @@ export default function OrcamentosPage() {
                   <div className="flex items-center gap-1">
                     <span className="text-lg">R$</span>
                     <span className="text-2xl font-medium">
-                      {formatCurrency(lucro).replace("R$", "")}
+                      {formatCurrency(lucro).slice(3)}
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 text-emerald-500 text-sm mt-1">
-                  <span>↑</span>
-                  <span>2.29%</span>
+                  <span>{percentuais.lucro >= 0 ? "↑" : "↓"}</span>
+                  <span>{Math.abs(percentuais.lucro).toFixed(2)}%</span>
                 </div>
               </div>
             </div>
