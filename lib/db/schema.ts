@@ -389,3 +389,48 @@ export const budgetAdditionals = pgTable("budget_additionals", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// Schema para projetos do portfólio
+export const portfolioProjects = pgTable("portfolio_projects", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  user_id: uuid("user_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  category: text("category"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const portfolioImages = pgTable("portfolio_images", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  project_id: uuid("project_id").references(() => portfolioProjects.id, {
+    onDelete: "cascade",
+  }),
+  url: text("url").notNull(),
+  is_cover: boolean("is_cover").default(false),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Schema para depoimentos do portfólio
+export const portfolioTestimonials = pgTable("portfolio_testimonials", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  user_id: text("user_id").notNull(),
+  client_name: text("client_name").notNull(),
+  company: text("company"),
+  profession: text("profession"),
+  testimonial: text("testimonial").notNull(),
+  rating: integer("rating").notNull(),
+  photo_url: text("photo_url"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Schema para scripts de apresentação do portfólio
+export const portfolioScripts = pgTable("portfolio_scripts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  user_id: text("user_id").notNull(),
+  header_script: text("header_script"),
+  footer_script: text("footer_script"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
