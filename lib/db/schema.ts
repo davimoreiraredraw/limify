@@ -85,9 +85,7 @@ export const ExpensesTable = pgTable("expenses", {
   frequency: text("frequency").notNull().default("Mensal"),
   compensationDay: integer("compensation_day"),
   categoryId: uuid("category_id").references(() => CategoriesTable.id),
-  userId: text("user_id")
-    .references(() => profiles.id)
-    .notNull(),
+  userId: text("user_id").notNull(),
   isFixed: boolean("is_fixed").notNull().default(true),
   isActive: boolean("is_active").notNull().default(true),
   isArchived: boolean("is_archived").notNull().default(false),

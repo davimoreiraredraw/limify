@@ -14,6 +14,7 @@ import {
 } from "@radix-ui/react-icons";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
+import { useUpload } from "@/lib/hooks/useUpload";
 
 interface Project {
   id: string;
@@ -65,6 +66,32 @@ export default function PortfolioPage() {
   const [scripts, setScripts] = useState({
     header_script: "",
     footer_script: "",
+  });
+
+  const profileUpload = useUpload({
+    folder: "profile",
+    onSuccess: (url) => {
+      // TODO: Atualizar perfil com nova foto
+      toast.success("Foto de perfil atualizada com sucesso!");
+    },
+  });
+
+  const logoUpload = useUpload({
+    folder: "logos",
+    onSuccess: (url) => {
+      // TODO: Atualizar logo
+      toast.success("Logo atualizada com sucesso!");
+    },
+  });
+
+  const projectImagesUpload = useUpload({
+    folder: "projects",
+    onSuccess: (url) => {
+      // Adicionar nova imagem ao preview
+      const newPreviewImages = [...previewImages, url];
+      setPreviewImages(newPreviewImages);
+      toast.success("Imagem adicionada com sucesso!");
+    },
   });
 
   // Buscar projetos
@@ -137,18 +164,56 @@ export default function PortfolioPage() {
     setIsEditModalOpen(true);
   };
 
-  // Função para lidar com seleção de imagens
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Função para editar projeto
+  const handleEditProject = (project: Project) => {
+    setSelectedProject(project);
+    // Inicializar o preview com as imagens existentes
+    setPreviewImages(project.images.map((img) => img.url));
+    setSelectedFiles([]);
+    setIsEditModalOpen(true);
+  };
+
+  // Atualizar função de seleção de imagem do perfil
+  const handleProfilePhotoSelect = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        await profileUpload.upload(file);
+      } catch (error) {
+        console.error("Erro ao fazer upload da foto de perfil:", error);
+      }
+    }
+  };
+
+  // Atualizar função de seleção de logo
+  const handleLogoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        await logoUpload.upload(file);
+      } catch (error) {
+        console.error("Erro ao fazer upload da logo:", error);
+      }
+    }
+  };
+
+  // Atualizar função de seleção de imagens do projeto
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
       const newFiles = Array.from(files);
       setSelectedFiles((prev) => [...prev, ...newFiles]);
 
-      // Criar previews
-      const newPreviewImages = newFiles.map((file) =>
-        URL.createObjectURL(file)
-      );
-      setPreviewImages((prev) => [...prev, ...newPreviewImages]);
+      // Upload de cada arquivo
+      for (const file of newFiles) {
+        try {
+          await projectImagesUpload.upload(file);
+        } catch (error) {
+          console.error("Erro ao fazer upload da imagem:", error);
+        }
+      }
     }
   };
 
@@ -176,11 +241,15 @@ export default function PortfolioPage() {
       formData.append("title", selectedProject.title);
       formData.append("description", selectedProject.description);
       formData.append("category", selectedProject.category || "");
-
-      // Temporariamente removido o upload de imagens
-      // selectedFiles.forEach((file) => {
-      //   formData.append("images", file);
-      // });
+      formData.append(
+        "images",
+        JSON.stringify(
+          previewImages.map((url) => ({
+            url,
+            is_cover: false,
+          }))
+        )
+      );
 
       const response = await fetch("/api/portfolio/projects", {
         method: "POST",
@@ -193,8 +262,7 @@ export default function PortfolioPage() {
       setIsEditModalOpen(false);
       fetchProjects();
 
-      // Limpar previews
-      previewImages.forEach((url) => URL.revokeObjectURL(url));
+      // Limpar estados
       setPreviewImages([]);
       setSelectedFiles([]);
     } catch (error) {
@@ -231,6 +299,10 @@ export default function PortfolioPage() {
       formData.append("testimonial", newTestimonial.testimonial);
       formData.append("rating", rating.toString());
 
+      // Gerar avatar usando DiceBear apenas se não houver foto selecionada
+      const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${newTestimonial.client_name}`;
+      formData.append("photo_url", avatarUrl);
+
       const response = await fetch("/api/portfolio/testimonials", {
         method: "POST",
         body: formData,
@@ -250,6 +322,8 @@ export default function PortfolioPage() {
         testimonial: "",
       });
       setRating(5);
+      setPhotoPreview("");
+      setSelectedPhoto(null);
     } catch (error) {
       console.error("Erro ao salvar depoimento:", error);
       toast.error("Erro ao salvar depoimento");
@@ -345,10 +419,7 @@ export default function PortfolioPage() {
                         className="w-full h-full object-cover"
                       />
                       <button
-                        onClick={() => {
-                          setSelectedProject(project);
-                          setIsEditModalOpen(true);
-                        }}
+                        onClick={() => handleEditProject(project)}
                         className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow-sm hover:bg-gray-50"
                       >
                         <Pencil2Icon className="w-4 h-4" />
@@ -451,20 +522,26 @@ export default function PortfolioPage() {
                         </label>
                         <div className="grid grid-cols-5 gap-2">
                           {/* Botão de upload */}
-                          <label className="border-2 border-dashed border-primary/40 rounded-lg aspect-square flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50">
-                            <div className="text-center">
-                              <UploadIcon className="w-6 h-6 text-primary mx-auto mb-1" />
-                              <span className="text-xs text-muted-foreground">
-                                Arraste ou clique para buscar
-                              </span>
-                            </div>
-                            <input
-                              type="file"
-                              multiple
-                              accept="image/*"
-                              className="hidden"
-                              onChange={handleImageSelect}
-                            />
+                          <label className="relative border-2 border-dashed border-primary/40 rounded-lg aspect-square flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 overflow-hidden">
+                            {projectImagesUpload.isUploading ? (
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              </div>
+                            ) : (
+                              <>
+                                <UploadIcon className="w-8 h-8 text-primary mb-2" />
+                                <span className="text-xs text-muted-foreground text-center">
+                                  Arraste ou clique para buscar
+                                </span>
+                                <input
+                                  type="file"
+                                  multiple
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={handleImageSelect}
+                                />
+                              </>
+                            )}
                           </label>
 
                           {/* Preview das imagens */}
@@ -566,12 +643,26 @@ export default function PortfolioPage() {
                 </Button>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 items-center">
-                <div className="flex flex-col items-center justify-center border-2 border-dashed border-primary/40 rounded-lg w-32 h-32 cursor-pointer bg-muted">
-                  <UploadIcon className="w-8 h-8 text-primary mb-2" />
-                  <span className="text-xs text-muted-foreground text-center">
-                    Arraste ou clique para buscar
-                  </span>
-                </div>
+                <label className="relative flex flex-col items-center justify-center border-2 border-dashed border-primary/40 rounded-lg w-32 h-32 cursor-pointer bg-muted overflow-hidden">
+                  {profileUpload.isUploading ? (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <UploadIcon className="w-8 h-8 text-primary mb-2" />
+                      <span className="text-xs text-muted-foreground text-center">
+                        Arraste ou clique para buscar
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleProfilePhotoSelect}
+                      />
+                    </>
+                  )}
+                </label>
                 <div className="flex-1 flex flex-col gap-1">
                   <span className="font-semibold text-lg">Anna Jones</span>
                   <span className="text-sm text-muted-foreground">
@@ -602,12 +693,26 @@ export default function PortfolioPage() {
                 Adicione sua logo para o fundo branco e preto
               </span>
               <div className="flex items-center gap-4">
-                <div className="flex flex-col items-center justify-center border-2 border-dashed border-primary/40 rounded-lg w-32 h-32 cursor-pointer bg-muted">
-                  <UploadIcon className="w-8 h-8 text-primary mb-2" />
-                  <span className="text-xs text-muted-foreground text-center">
-                    Arraste ou clique para buscar
-                  </span>
-                </div>
+                <label className="relative flex flex-col items-center justify-center border-2 border-dashed border-primary/40 rounded-lg w-32 h-32 cursor-pointer bg-muted overflow-hidden">
+                  {logoUpload.isUploading ? (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <UploadIcon className="w-8 h-8 text-primary mb-2" />
+                      <span className="text-xs text-muted-foreground text-center">
+                        Arraste ou clique para buscar
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleLogoSelect}
+                      />
+                    </>
+                  )}
+                </label>
                 <div className="flex gap-2 items-center ml-4">
                   <SwitchCustom
                     checked={logoBgWhite}

@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
 
     // Cria a data atual para os campos timestamp
     const now = new Date();
-
+    console.log(session.user.id, "SESSION");
     // Inserir a despesa no banco
     const insertedExpenses = await db
       .insert(ExpensesTable)

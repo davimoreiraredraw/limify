@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
     const title = formData.get("title") as string;
     const description = formData.get("description") as string;
     const category = formData.get("category") as string;
+    const images = JSON.parse(formData.get("images") as string);
 
     // Criar o projeto
     const [project] = await db
@@ -99,18 +100,18 @@ export async function POST(req: NextRequest) {
       })
       .returning();
 
-    // Usar uma imagem padrão temporária
-    const defaultImageUrl = "https://placehold.co/600x400";
-
-    // Salvar referência da imagem padrão no banco
-    await db
-      .insert(portfolioImages)
-      .values({
-        project_id: project.id,
-        url: defaultImageUrl,
-        is_cover: true,
-      })
-      .returning();
+    // Salvar todas as imagens do projeto
+    if (images && images.length > 0) {
+      await db.insert(portfolioImages).values(
+        images.map(
+          (img: { url: string; is_cover: boolean }, index: number) => ({
+            project_id: project.id,
+            url: img.url,
+            is_cover: index === 0, // primeira imagem será a capa
+          })
+        )
+      );
+    }
 
     return NextResponse.json({ success: true, project });
   } catch (error) {
