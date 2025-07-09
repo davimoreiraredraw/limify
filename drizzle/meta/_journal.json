@@ -155,6 +155,13 @@
       "when": 1752072716569,
       "tag": "0022_flaky_thanos",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1752073670974,
+      "tag": "0023_cuddly_tigra",
+      "breakpoints": true
     }
   ]
 }

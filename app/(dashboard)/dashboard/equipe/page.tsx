@@ -168,23 +168,23 @@ export default function TeamPage() {
           ) : (
             teamMembers.map((member) => (
               <div
-                key={member.id}
+                key={member?.id}
                 className="grid grid-cols-[48px,2fr,2fr,1fr,80px] gap-4 px-4 py-3 border-b border-gray-100 hover:bg-gray-50"
               >
                 <div className="flex items-center">
                   <Checkbox
                     className="rounded-[4px] border-gray-300"
-                    checked={member.selected}
+                    checked={member?.selected}
                   />
                 </div>
                 <div className="flex items-center text-sm text-gray-900">
-                  {member.name}
+                  {member?.name}
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
-                  {member.email}
+                  {member?.email}
                 </div>
                 <div className="flex items-center gap-1">
-                  {member.roles.map((role, index) => (
+                  {member?.roles.map((role, index) => (
                     <span
                       key={index}
                       className={`px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -199,7 +199,7 @@ export default function TeamPage() {
                     </span>
                   ))}
                 </div>
-                <div className="flex items-center">
+                <div className="fle`x items-center">
                   <button className="text-[#6E2DFA] text-sm font-medium hover:text-[#6E2DFA]/90">
                     Editar
                   </button>

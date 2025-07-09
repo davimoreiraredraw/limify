@@ -210,6 +210,21 @@ export const teamMembersTable = pgTable("team_members", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Tabela de convites pendentes
+export const teamInvitesTable = pgTable("team_invites", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  teamId: uuid("team_id")
+    .references(() => teamsTable.id)
+    .notNull(),
+  email: text("email").notNull(),
+  name: text("name").notNull(),
+  role: teamRoleEnum("role").default("member").notNull(),
+  invitedBy: text("invited_by").notNull(),
+  status: text("status").default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Tipos para as tabelas
 export type Category = InferSelectModel<typeof CategoriesTable>;
 export type NewCategory = InferInsertModel<typeof CategoriesTable>;
@@ -296,6 +311,17 @@ export const teamMembersRelations = drizzleRelations(
     user: one(profiles, {
       fields: [teamMembersTable.userId],
       references: [profiles.id],
+    }),
+  })
+);
+
+// Relações para convites
+export const teamInvitesRelations = drizzleRelations(
+  teamInvitesTable,
+  ({ one }) => ({
+    team: one(teamsTable, {
+      fields: [teamInvitesTable.teamId],
+      references: [teamsTable.id],
     }),
   })
 );

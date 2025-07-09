@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { teamsTable, teamMembersTable, profiles } from "@/lib/db/schema";
+import {
+  teamsTable,
+  teamMembersTable,
+  teamInvitesTable,
+} from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { toast } from "sonner";
+import { sendTeamInvite } from "@/lib/email";
 
 // Rota para listar membros da equipe
 export async function GET(req: NextRequest) {
@@ -45,16 +50,11 @@ export async function GET(req: NextRequest) {
 
     // Se não estiver em nenhuma equipe, criar uma nova equipe com o usuário como owner
     if (!teamMember) {
-      // Buscar perfil do usuário
-      const userProfile = await db.query.profiles.findFirst({
-        where: eq(profiles.id, session.user.id),
-      });
-
       // Criar nova equipe
       const [newTeam] = await db
         .insert(teamsTable)
         .values({
-          name: `Equipe ${userProfile?.name || session.user.email}`,
+          name: `Equipe ${session.user.email?.split("@")[0] || "Novo Usuário"}`,
           ownerId: session.user.id,
         })
         .returning();
@@ -64,7 +64,10 @@ export async function GET(req: NextRequest) {
         teamId: newTeam.id,
         userId: session.user.id,
         name:
-          userProfile?.name || session.user.email?.split("@")[0] || "Usuário",
+          session.user.user_metadata?.name ||
+          session.user.email?.split("@")[0] ||
+          "Usuário",
+        email: session.user.email || "",
         role: "owner",
       });
 
@@ -74,10 +77,10 @@ export async function GET(req: NextRequest) {
           {
             id: session.user.id,
             name:
-              userProfile?.name ||
+              session.user.user_metadata?.name ||
               session.user.email?.split("@")[0] ||
               "Usuário",
-            email: userProfile?.email || session.user.email,
+            email: session.user.email,
             roles: ["owner"],
           },
         ],
@@ -86,24 +89,16 @@ export async function GET(req: NextRequest) {
 
     // Buscar todos os membros da equipe
     const teamMembers = await db
-      .select({
-        member: teamMembersTable,
-        user: profiles,
-      })
+      .select()
       .from(teamMembersTable)
-      .leftJoin(profiles, eq(teamMembersTable.userId, profiles.id))
       .where(eq(teamMembersTable.teamId, teamMember.teamId));
 
     // Formatar os resultados para o formato esperado pelo frontend
-    const formattedMembers = teamMembers.map((item) => ({
-      id: item.user?.id || item.member.userId,
-      name:
-        item.member.name ||
-        item.user?.name ||
-        item.user?.email?.split("@")[0] ||
-        "Usuário",
-      email: item.member.email || item.user?.email || "",
-      roles: [item.member.role],
+    const formattedMembers = teamMembers.map((member) => ({
+      id: member.userId,
+      name: member.name,
+      email: member.email || "",
+      roles: [member.role],
     }));
 
     return NextResponse.json({ teamMembers: formattedMembers });
@@ -151,42 +146,23 @@ export async function POST(req: NextRequest) {
     // Verificar se o usuário atual é admin ou owner
     const currentMember = await db.query.teamMembersTable.findFirst({
       where: eq(teamMembersTable.userId, session.user.id),
+      with: {
+        team: true,
+      },
     });
 
     if (!currentMember || !["owner", "admin"].includes(currentMember.role)) {
-      toast.error("Sem permissão para adicionar membros");
       return NextResponse.json(
         { error: "Sem permissão para adicionar membros" },
         { status: 403 }
       );
     }
 
-    // Buscar o usuário pelo email
-    let user = await db.query.profiles.findFirst({
-      where: eq(profiles.email, email),
-    });
-
-    // Se o usuário não existir, criar um novo perfil
-    if (!user) {
-      const [newUser] = await db
-        .insert(profiles)
-        .values({
-          id: crypto.randomUUID(), // Gerar um ID único para o usuário
-          email: email,
-          name: name || email.split("@")[0], // Usar o nome fornecido ou parte do email como nome
-          user_type: "professional", // Definir o tipo de usuário
-          createdAt: new Date(),
-        })
-        .returning();
-
-      user = newUser;
-    }
-
     // Verificar se o usuário já é membro da equipe
     const existingMember = await db.query.teamMembersTable.findFirst({
       where: and(
         eq(teamMembersTable.teamId, currentMember.teamId),
-        eq(teamMembersTable.userId, user.id)
+        eq(teamMembersTable.email, email)
       ),
     });
 
@@ -197,25 +173,62 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Adicionar novo membro
-    const [newMember] = await db
-      .insert(teamMembersTable)
+    // Verificar se já existe um convite pendente
+    const existingInvite = await db.query.teamInvitesTable.findFirst({
+      where: and(
+        eq(teamInvitesTable.teamId, currentMember.teamId),
+        eq(teamInvitesTable.email, email),
+        eq(teamInvitesTable.status, "pending")
+      ),
+    });
+
+    if (existingInvite) {
+      toast.error("Já existe um convite pendente para este email");
+      return NextResponse.json(
+        { error: "Já existe um convite pendente para este email" },
+        { status: 400 }
+      );
+    }
+
+    // Criar convite
+    const [invite] = await db
+      .insert(teamInvitesTable)
       .values({
         teamId: currentMember.teamId,
-        userId: user.id,
+        email,
         name: name || email.split("@")[0],
         role: role || "member",
+        invitedBy: session.user.id,
       })
       .returning();
 
+    // Gerar link de convite
+    const inviteLink = `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invite?token=${invite.id}`;
+
+    // Enviar email de convite
+    const { success, error: emailError } = await sendTeamInvite({
+      email,
+      name: name || email.split("@")[0],
+      teamName: currentMember.team.name,
+      inviteLink,
+    });
+
+    if (!success) {
+      // Se houver erro no envio do email, deletar o convite
+      await db
+        .delete(teamInvitesTable)
+        .where(eq(teamInvitesTable.id, invite.id));
+
+      return NextResponse.json(
+        { error: "Erro ao enviar convite" },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       {
-        member: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          roles: [newMember.role],
-        },
+        message: "Convite enviado com sucesso",
+        invite,
       },
       { status: 201 }
     );

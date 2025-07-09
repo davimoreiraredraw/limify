@@ -19,6 +19,7 @@ import { EyeIcon, EyeOffIcon } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   fullName: z.string().min(3, {
@@ -35,7 +36,7 @@ const formSchema = z.object({
   }),
 });
 
-export function UserRegisterForm() {
+export function UserRegisterForm({ inviteId }: { inviteId?: string }) {
   const { signUp } = useAuth();
   const [showPassword, setShowPassword] = React.useState(false);
   const [userType, setUserType] = React.useState<"client" | "professional">(
@@ -53,7 +54,47 @@ export function UserRegisterForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    await signUp(values.email, values.password, values.fullName, userType);
+    try {
+      // Registrar o usuário
+      const user = await signUp(
+        values.email,
+        values.password,
+        values.fullName,
+        userType
+      );
+
+      // Se tiver um convite, aceitar
+      if (inviteId) {
+        try {
+          const response = await fetch("/api/teams/accept-invite", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ inviteId }),
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            toast.error("Erro ao aceitar convite", {
+              description: data.error || "Tente novamente mais tarde",
+            });
+          } else {
+            toast.success("Convite aceito com sucesso!", {
+              description: "Você já faz parte da equipe.",
+            });
+          }
+        } catch (error) {
+          console.error("Erro ao aceitar convite:", error);
+          toast.error("Erro ao aceitar convite", {
+            description: "Tente novamente mais tarde",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Erro no registro:", error);
+      // O toast de erro já é mostrado pelo hook useAuth
+    }
   }
 
   return (

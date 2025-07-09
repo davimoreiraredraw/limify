@@ -150,32 +150,16 @@ export function useAuth() {
       });
 
       if (error) {
+        toast.error("Erro ao criar conta", {
+          description: error?.message.includes("User already registered")
+            ? "Email já cadastrado"
+            : "Tente novamente mais tarde",
+        });
         throw error;
       }
 
       if (!data?.user?.id) {
         throw new Error("Erro ao criar usuário");
-      }
-
-      // Criar equipe para o usuário
-      try {
-        const response = await fetch("/api/teams/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: data.user.id,
-            name,
-            email,
-          }),
-        });
-
-        if (!response.ok) {
-          console.error("Erro ao criar equipe inicial");
-        }
-      } catch (error) {
-        console.error("Erro ao criar equipe:", error);
       }
 
       // O perfil será criado automaticamente pelo trigger do Supabase
@@ -184,12 +168,15 @@ export function useAuth() {
       });
 
       router.push("/login");
+
+      return data.user;
     } catch (error: any) {
       toast.error("Erro ao criar conta", {
         description: error?.message.includes("User already registered")
           ? "Email já cadastrado"
           : "Tente novamente mais tarde",
       });
+      throw error;
     }
   }
 
