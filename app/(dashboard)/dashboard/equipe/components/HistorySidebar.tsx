@@ -2,58 +2,10 @@
 
 import { XMarkIcon, CalendarIcon } from "@heroicons/react/24/outline";
 
-interface Activity {
-  id: string;
-  user: {
-    name: string;
-    avatar: string;
-  };
-  action: string;
-}
-
 interface HistorySidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const activities: Activity[] = [
-  {
-    id: "1",
-    user: {
-      name: "Kathryn Murphy",
-      avatar:
-        "https://ui-avatars.com/api/?name=Kathryn+Murphy&background=4FD1C5&color=fff",
-    },
-    action: "Criou novo orçamento",
-  },
-  {
-    id: "2",
-    user: {
-      name: "James Harrid",
-      avatar:
-        "https://ui-avatars.com/api/?name=James+Harrid&background=6E2DFA&color=fff",
-    },
-    action: "Gerou um relatório",
-  },
-  {
-    id: "3",
-    user: {
-      name: "Elon Melon",
-      avatar:
-        "https://ui-avatars.com/api/?name=Elon+Melon&background=4FD1C5&color=fff",
-    },
-    action: "Criou um novo orçamento",
-  },
-  {
-    id: "4",
-    user: {
-      name: "Mia Smith",
-      avatar:
-        "https://ui-avatars.com/api/?name=Mia+Smith&background=6E2DFA&color=fff",
-    },
-    action: "Adicionou e editor despesas",
-  },
-];
 
 export function HistorySidebar({ isOpen, onClose }: HistorySidebarProps) {
   if (!isOpen) return null;
@@ -98,24 +50,17 @@ export function HistorySidebar({ isOpen, onClose }: HistorySidebarProps) {
             </div>
           </div>
 
-          <div className="space-y-6">
-            {activities.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden">
-                  <img
-                    src={activity.user.avatar}
-                    alt={activity.user.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">
-                    {activity.user.name}
-                  </h3>
-                  <p className="text-sm text-gray-600">{activity.action}</p>
-                </div>
-              </div>
-            ))}
+          <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] text-center px-4">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <CalendarIcon className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Nenhuma atividade ainda
+            </h3>
+            <p className="text-sm text-gray-500">
+              Quando houver atualizações na sua equipe, como novos membros ou
+              alterações, elas aparecerão aqui.
+            </p>
           </div>
         </div>
       </div>
