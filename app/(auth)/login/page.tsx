@@ -3,10 +3,24 @@
 import Image from "next/image";
 import { UserLoginForm } from "@/components/auth/user-login-form";
 import { UserRegisterForm } from "@/components/auth/user-register-form";
+import { UserForgotPasswordForm } from "@/components/auth/user-forgot-password-form";
 import { useState } from "react";
 import LoginLogo from "@/public/limify_login_logo.png";
+
+type FormType = "login" | "register" | "forgot-password";
+
 export default function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [formType, setFormType] = useState<FormType>("login");
+
+  const formTitles = {
+    login: "Faça login",
+    register: (
+      <>
+        Crie uma conta <span className="text-primary">grátis</span> agora!
+      </>
+    ),
+    "forgot-password": "Recuperar senha",
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -27,87 +41,97 @@ export default function LoginPage() {
           {/* Título */}
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tight">
-              {isLogin ? (
-                "Faça login"
-              ) : (
-                <>
-                  Crie uma conta <span className="text-primary">grátis</span>{" "}
-                  agora!
-                </>
-              )}
+              {formTitles[formType]}
             </h1>
           </div>
 
           {/* Formulário */}
-          {isLogin ? <UserLoginForm /> : <UserRegisterForm />}
+          {formType === "login" && <UserLoginForm />}
+          {formType === "register" && <UserRegisterForm />}
+          {formType === "forgot-password" && <UserForgotPasswordForm />}
 
           {/* Links */}
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground text-center">
-              {isLogin ? (
+            <div className="flex flex-col gap-2 text-sm text-muted-foreground text-center">
+              {formType === "login" && (
                 <>
-                  Você não tem uma conta?{" "}
                   <button
-                    onClick={() => setIsLogin(false)}
+                    onClick={() => setFormType("forgot-password")}
                     className="text-primary hover:underline"
                   >
-                    Criar agora
+                    Esqueceu sua senha?
                   </button>
+                  <p>
+                    Você não tem uma conta?{" "}
+                    <button
+                      onClick={() => setFormType("register")}
+                      className="text-primary hover:underline"
+                    >
+                      Criar agora
+                    </button>
+                  </p>
                 </>
-              ) : (
-                <>
+              )}
+              {formType === "register" && (
+                <p>
                   Você já tem conta?{" "}
                   <button
-                    onClick={() => setIsLogin(true)}
+                    onClick={() => setFormType("login")}
                     className="text-primary hover:underline"
                   >
                     Faça login
                   </button>
-                </>
+                </p>
               )}
-            </p>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  ou
-                </span>
-              </div>
+              {formType === "forgot-password" && (
+                <p>
+                  Lembrou sua senha?{" "}
+                  <button
+                    onClick={() => setFormType("login")}
+                    className="text-primary hover:underline"
+                  >
+                    Voltar para o login
+                  </button>
+                </p>
+              )}
             </div>
 
-            {/* Botões de login social */}
-            <div className="flex gap-2">
-              <button className="flex-1 flex items-center justify-center gap-2 p-2 border rounded-lg hover:bg-accent">
-                <Image
-                  src="/google.svg"
-                  alt="Google"
-                  width={20}
-                  height={20}
-                  className="w-5 h-5"
-                />
-              </button>
-              <button className="flex-1 flex items-center justify-center gap-2 p-2 border rounded-lg hover:bg-accent">
-                <Image
-                  src="/facebook.svg"
-                  alt="Facebook"
-                  width={20}
-                  height={20}
-                  className="w-5 h-5"
-                />
-              </button>
-              <button className="flex-1 flex items-center justify-center gap-2 p-2 border rounded-lg hover:bg-accent">
-                <Image
-                  src="/github.svg"
-                  alt="GitHub"
-                  width={20}
-                  height={20}
-                  className="w-5 h-5"
-                />
-              </button>
-            </div>
+            {formType === "login" && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      ou
+                    </span>
+                  </div>
+                </div>
+
+                {/* Botões de login social */}
+                <div className="flex gap-2">
+                  <button className="flex-1 flex items-center justify-center gap-2 p-2 border rounded-lg hover:bg-accent">
+                    <Image
+                      src="/google.svg"
+                      alt="Google"
+                      width={20}
+                      height={20}
+                      className="w-5 h-5"
+                    />
+                  </button>
+                  <button className="flex-1 flex items-center justify-center gap-2 p-2 border rounded-lg hover:bg-accent">
+                    <Image
+                      src="/facebook.svg"
+                      alt="Facebook"
+                      width={20}
+                      height={20}
+                      className="w-5 h-5"
+                    />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

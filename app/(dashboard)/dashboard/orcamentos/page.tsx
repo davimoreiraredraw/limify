@@ -137,133 +137,130 @@ export default function OrcamentosPage() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    const fetchBudgets = async () => {
-      setIsLoading(true);
-      try {
-        console.log("Iniciando busca de orçamentos na página...");
-        const res = await fetch("/api/budgets");
+  const fetchBudgets = async () => {
+    setIsLoading(true);
+    try {
+      console.log("Iniciando busca de orçamentos na página...");
+      const res = await fetch("/api/budgets");
 
-        if (!res.ok) {
-          // Se a resposta não for OK (200-299), extrair o erro
-          const errorData = await res.json();
-          console.error("Erro na resposta da API:", errorData);
-          throw new Error(
-            `Erro ${res.status}: ${errorData.error || "Desconhecido"}`
-          );
-        }
-
-        const data = await res.json();
-        console.log("Dados recebidos da API:", data);
-
-        // Garantir que data é um array
-        const budgetsArray = Array.isArray(data) ? data : [];
-
-        // Mapear e garantir que todos os valores numéricos estão corretos
-        const processedBudgets = budgetsArray
-          .map((budget) => {
-            // Verificar se o orçamento tem todas as propriedades necessárias
-            if (!budget || typeof budget !== "object") {
-              console.error("Orçamento inválido recebido da API:", budget);
-              return null;
-            }
-
-            // Garantir que o ID existe
-            if (!budget.id) {
-              budget.id = `temp-${Math.random().toString(36).substring(2, 11)}`;
-              console.warn(
-                "Orçamento sem ID, gerando ID temporário:",
-                budget.id
-              );
-            }
-
-            // Garantir que o total é um número
-            let total = 0;
-            if (budget.total !== undefined) {
-              if (typeof budget.total === "string") {
-                total = parseFloat(budget.total) || 0;
-              } else if (typeof budget.total === "number") {
-                total = budget.total;
-              }
-            }
-
-            // Garantir que created_at é uma string de data válida
-            let created_at = budget.created_at;
-            if (
-              !created_at ||
-              new Date(created_at).toString() === "Invalid Date"
-            ) {
-              created_at = new Date().toISOString();
-              console.warn(
-                `Data inválida para orçamento ${budget.id}, usando data atual.`
-              );
-            }
-
-            return {
-              ...budget,
-              total: total,
-              created_at: created_at,
-              name: budget.name || "Sem nome",
-              client_name: budget.client_name || "Sem cliente",
-            };
-          })
-          .filter(Boolean); // Remover itens nulos
-
-        console.log("Orçamentos processados:", processedBudgets);
-        setBudgets(processedBudgets);
-
-        // Distribuir os orçamentos nas colunas apropriadas
-        if (processedBudgets.length > 0) {
-          const updatedColumns = { ...columns };
-
-          // Limpar os budgetIds existentes
-          Object.keys(updatedColumns).forEach((columnId) => {
-            updatedColumns[columnId].budgetIds = [];
-            updatedColumns[columnId].count = 0;
-            updatedColumns[columnId].totalValue = 0;
-          });
-
-          // Distribuir os orçamentos nas colunas
-          processedBudgets.forEach((budget) => {
-            try {
-              // Por padrão, colocar na coluna GERADO se não especificado
-              const targetColumn = "GERADO";
-
-              // Verificar se a coluna existe
-              if (!updatedColumns[targetColumn]) {
-                console.error(
-                  `Coluna ${targetColumn} não encontrada para o orçamento ${budget.id}`
-                );
-                return;
-              }
-
-              updatedColumns[targetColumn].budgetIds.push(budget.id);
-              updatedColumns[targetColumn].count += 1;
-              updatedColumns[targetColumn].totalValue =
-                (updatedColumns[targetColumn].totalValue || 0) + budget.total;
-            } catch (error) {
-              console.error(
-                `Erro ao distribuir orçamento ${budget.id} nas colunas:`,
-                error
-              );
-            }
-          });
-
-          console.log("Colunas atualizadas:", updatedColumns);
-          setColumns(updatedColumns);
-        }
-      } catch (err) {
-        console.error("Erro ao buscar orçamentos:", err);
-        toast.error(
-          `Erro ao carregar orçamentos: ${
-            err instanceof Error ? err.message : "Erro desconhecido"
-          }`
+      if (!res.ok) {
+        // Se a resposta não for OK (200-299), extrair o erro
+        const errorData = await res.json();
+        console.error("Erro na resposta da API:", errorData);
+        throw new Error(
+          `Erro ${res.status}: ${errorData.error || "Desconhecido"}`
         );
-        setBudgets([]);
-      } finally {
-        setIsLoading(false);
       }
-    };
+
+      const data = await res.json();
+      console.log("Dados recebidos da API:", data);
+
+      // Garantir que data é um array
+      const budgetsArray = Array.isArray(data) ? data : [];
+
+      // Mapear e garantir que todos os valores numéricos estão corretos
+      const processedBudgets = budgetsArray
+        .map((budget) => {
+          // Verificar se o orçamento tem todas as propriedades necessárias
+          if (!budget || typeof budget !== "object") {
+            console.error("Orçamento inválido recebido da API:", budget);
+            return null;
+          }
+
+          // Garantir que o ID existe
+          if (!budget.id) {
+            budget.id = `temp-${Math.random().toString(36).substring(2, 11)}`;
+            console.warn("Orçamento sem ID, gerando ID temporário:", budget.id);
+          }
+
+          // Garantir que o total é um número
+          let total = 0;
+          if (budget.total !== undefined) {
+            if (typeof budget.total === "string") {
+              total = parseFloat(budget.total) || 0;
+            } else if (typeof budget.total === "number") {
+              total = budget.total;
+            }
+          }
+
+          // Garantir que created_at é uma string de data válida
+          let created_at = budget.created_at;
+          if (
+            !created_at ||
+            new Date(created_at).toString() === "Invalid Date"
+          ) {
+            created_at = new Date().toISOString();
+            console.warn(
+              `Data inválida para orçamento ${budget.id}, usando data atual.`
+            );
+          }
+
+          return {
+            ...budget,
+            total: total,
+            created_at: created_at,
+            name: budget.name || "Sem nome",
+            client_name: budget.client_name || "Sem cliente",
+          };
+        })
+        .filter(Boolean); // Remover itens nulos
+
+      console.log("Orçamentos processados:", processedBudgets);
+      setBudgets(processedBudgets);
+
+      // Distribuir os orçamentos nas colunas apropriadas
+      if (processedBudgets.length > 0) {
+        const updatedColumns = { ...columns };
+
+        // Limpar os budgetIds existentes
+        Object.keys(updatedColumns).forEach((columnId) => {
+          updatedColumns[columnId].budgetIds = [];
+          updatedColumns[columnId].count = 0;
+          updatedColumns[columnId].totalValue = 0;
+        });
+
+        // Distribuir os orçamentos nas colunas
+        processedBudgets.forEach((budget) => {
+          try {
+            // Por padrão, colocar na coluna GERADO se não especificado
+            const targetColumn = "GERADO";
+
+            // Verificar se a coluna existe
+            if (!updatedColumns[targetColumn]) {
+              console.error(
+                `Coluna ${targetColumn} não encontrada para o orçamento ${budget.id}`
+              );
+              return;
+            }
+
+            updatedColumns[targetColumn].budgetIds.push(budget.id);
+            updatedColumns[targetColumn].count += 1;
+            updatedColumns[targetColumn].totalValue =
+              (updatedColumns[targetColumn].totalValue || 0) + budget.total;
+          } catch (error) {
+            console.error(
+              `Erro ao distribuir orçamento ${budget.id} nas colunas:`,
+              error
+            );
+          }
+        });
+
+        console.log("Colunas atualizadas:", updatedColumns);
+        setColumns(updatedColumns);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar orçamentos:", err);
+      toast.error(
+        `Erro ao carregar orçamentos: ${
+          err instanceof Error ? err.message : "Erro desconhecido"
+        }`
+      );
+      setBudgets([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  useEffect(() => {
     fetchBudgets();
   }, []);
 
@@ -819,6 +816,7 @@ export default function OrcamentosPage() {
         <CreateBudgetScreen
           isCreatingBudget={isCreatingBudget}
           setIsCreatingBudget={setIsCreatingBudget}
+          fetchBudgets={fetchBudgets}
           selectedBudgetType={selectedBudgetType}
           setSelectedBudgetType={setSelectedBudgetType}
           budgetStep={budgetStep}

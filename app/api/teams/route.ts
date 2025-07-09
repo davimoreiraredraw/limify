@@ -4,6 +4,7 @@ import { teamsTable, teamMembersTable, profiles } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { toast } from "sonner";
 
 // Rota para listar membros da equipe
 export async function GET(req: NextRequest) {
@@ -62,6 +63,8 @@ export async function GET(req: NextRequest) {
       await db.insert(teamMembersTable).values({
         teamId: newTeam.id,
         userId: session.user.id,
+        name:
+          userProfile?.name || session.user.email?.split("@")[0] || "Usuário",
         role: "owner",
       });
 
@@ -94,8 +97,12 @@ export async function GET(req: NextRequest) {
     // Formatar os resultados para o formato esperado pelo frontend
     const formattedMembers = teamMembers.map((item) => ({
       id: item.user?.id || item.member.userId,
-      name: item.user?.name || item.user?.email?.split("@")[0] || "Usuário",
-      email: item.user?.email || "",
+      name:
+        item.member.name ||
+        item.user?.name ||
+        item.user?.email?.split("@")[0] ||
+        "Usuário",
+      email: item.member.email || item.user?.email || "",
       roles: [item.member.role],
     }));
 
@@ -147,6 +154,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!currentMember || !["owner", "admin"].includes(currentMember.role)) {
+      toast.error("Sem permissão para adicionar membros");
       return NextResponse.json(
         { error: "Sem permissão para adicionar membros" },
         { status: 403 }
@@ -195,6 +203,7 @@ export async function POST(req: NextRequest) {
       .values({
         teamId: currentMember.teamId,
         userId: user.id,
+        name: name || email.split("@")[0],
         role: role || "member",
       })
       .returning();

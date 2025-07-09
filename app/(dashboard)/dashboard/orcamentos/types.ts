@@ -9,6 +9,21 @@ export interface Budget {
   price: number;
   profit: number;
   total?: number;
+  name?: string;
+  client_name?: string;
+  description?: string;
+  model?: string;
+  budget_type?: string;
+  value_type?: string;
+  average_price_per_m2?: number;
+  discount?: number;
+  discount_type?: string;
+  base_value?: number;
+  complexity_percentage?: number;
+  delivery_time_percentage?: number;
+  delivery_time_days?: number;
+  created_at?: string;
+  updated_at?: string;
   status:
     | "Visualizado"
     | "Não gerado"

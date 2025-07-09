@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import ExpenseModal from "@/app/components/ExpenseModal";
+import CategoryModal from "@/app/components/CategoryModal";
 import {
   fetchExpenses,
   Expense,
@@ -42,6 +43,8 @@ export default function DespesasPage() {
   const [totalPontuais, setTotalPontuais] = useState(0);
   const [custoHora, setCustoHora] = useState(0);
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
+  const [modalCategoriaAberto, setModalCategoriaAberto] = useState(false);
+  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
 
   // Buscar dados da API
   const fetchData = async () => {
@@ -69,11 +72,15 @@ export default function DespesasPage() {
         0
       );
 
-      setTotalFixas(totalMensalFixas);
-      setTotalPontuais(totalMensalPontuais);
+      let parsedTotalMensalFixas = parseFloat(totalMensalFixas.toString());
+      let parsedTotalMensalPontuais = parseFloat(
+        totalMensalPontuais.toString()
+      );
+      setTotalFixas(parsedTotalMensalFixas);
+      setTotalPontuais(parsedTotalMensalPontuais);
 
       // Cálculo simples do custo hora (total mensal / 160 horas no mês)
-      const totalMensal = totalMensalFixas + totalMensalPontuais;
+      const totalMensal = parsedTotalMensalFixas + parsedTotalMensalPontuais;
       setCustoHora(totalMensal / 160);
     } catch (error) {
       console.error("Erro ao buscar dados:", error);
@@ -150,6 +157,27 @@ export default function DespesasPage() {
   };
 
   const handleSubmitDespesa = (success: boolean) => {
+    if (success) {
+      fetchData();
+    }
+  };
+
+  // Funções para o modal de categoria
+  const abrirModalCategoria = (category?: Category) => {
+    if (category) {
+      setCategoryToEdit(category);
+    } else {
+      setCategoryToEdit(null);
+    }
+    setModalCategoriaAberto(true);
+  };
+
+  const fecharModalCategoria = () => {
+    setModalCategoriaAberto(false);
+    setCategoryToEdit(null);
+  };
+
+  const handleSubmitCategoria = (success: boolean) => {
     if (success) {
       fetchData();
     }
@@ -290,6 +318,7 @@ export default function DespesasPage() {
             <Button
               size="sm"
               className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1 px-3 py-1 h-8"
+              onClick={() => abrirModalCategoria()}
             >
               <TagIcon className="h-4 w-4" />
               Criar categoria
@@ -549,6 +578,22 @@ export default function DespesasPage() {
             : undefined
         }
         isEdit={!!expenseToEdit}
+      />
+
+      {/* Modal de adicionar/editar categoria */}
+      <CategoryModal
+        isOpen={modalCategoriaAberto}
+        onClose={fecharModalCategoria}
+        onSubmit={handleSubmitCategoria}
+        initialData={
+          categoryToEdit
+            ? {
+                id: categoryToEdit.id,
+                name: categoryToEdit.name,
+              }
+            : undefined
+        }
+        isEdit={!!categoryToEdit}
       />
     </div>
   );

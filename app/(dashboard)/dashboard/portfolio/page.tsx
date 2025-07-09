@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpload } from "@/lib/hooks/useUpload";
+import { useUser } from "@/hooks/useUser";
 
 interface Project {
   id: string;
@@ -39,6 +40,8 @@ interface Testimonial {
 }
 
 export default function PortfolioPage() {
+  const { user } = useUser();
+
   const [tab, setTab] = useState("marca");
   const [logoBgWhite, setLogoBgWhite] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -68,18 +71,21 @@ export default function PortfolioPage() {
     footer_script: "",
   });
 
+  const [isEditingAbout, setIsEditingAbout] = useState(false);
+  const [about, setAbout] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+
   const profileUpload = useUpload({
     folder: "profile",
     onSuccess: (url) => {
-      // TODO: Atualizar perfil com nova foto
-      toast.success("Foto de perfil atualizada com sucesso!");
+      setLogoUrl(url);
     },
   });
 
   const logoUpload = useUpload({
     folder: "logos",
     onSuccess: (url) => {
-      // TODO: Atualizar logo
+      setLogoUrl(url);
       toast.success("Logo atualizada com sucesso!");
     },
   });
@@ -112,6 +118,10 @@ export default function PortfolioPage() {
       fetchScripts();
     }
   }, [tab]);
+
+  useEffect(() => {
+    fetchBrandInfo();
+  }, []);
 
   const fetchProjects = async () => {
     try {
@@ -151,6 +161,19 @@ export default function PortfolioPage() {
     }
   };
 
+  const fetchBrandInfo = async () => {
+    try {
+      const response = await fetch("/api/portfolio/brand");
+      const data = await response.json();
+      if (data) {
+        setAbout(data.about || "");
+        setLogoUrl(data.logo_url || "");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar informações da marca:", error);
+    }
+  };
+
   // Função para criar novo projeto
   const handleCreateProject = () => {
     setSelectedProject({
@@ -173,17 +196,56 @@ export default function PortfolioPage() {
     setIsEditModalOpen(true);
   };
 
+  const handleSaveAbout = async () => {
+    setIsSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append("about", about);
+      formData.append("logo_url", ""); // Será atualizado quando houver upload
+
+      const response = await fetch("/api/portfolio/brand", {
+        method: "PUT",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Erro ao salvar");
+
+      setIsEditingAbout(false);
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Atualizar função de seleção de imagem do perfil
   const handleProfilePhotoSelect = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
-    if (file) {
-      try {
-        await profileUpload.upload(file);
-      } catch (error) {
-        console.error("Erro ao fazer upload da foto de perfil:", error);
-      }
+    if (!file) return;
+
+    try {
+      setIsSaving(true);
+      const { url } = await profileUpload.upload(file);
+
+      const formData = new FormData();
+      formData.append("about", about);
+      formData.append("logo_url", url);
+
+      const response = await fetch("/api/portfolio/brand", {
+        method: "PUT",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Erro ao salvar");
+
+      toast.success("Foto atualizada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao fazer upload:", error);
+      toast.error("Erro ao atualizar foto");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -648,6 +710,23 @@ export default function PortfolioPage() {
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                       <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     </div>
+                  ) : logoUrl ? (
+                    <>
+                      <img
+                        src={logoUrl}
+                        alt="Logo"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <UploadIcon className="w-8 h-8 text-white" />
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleProfilePhotoSelect}
+                      />
+                    </>
                   ) : (
                     <>
                       <UploadIcon className="w-8 h-8 text-primary mb-2" />
@@ -664,15 +743,56 @@ export default function PortfolioPage() {
                   )}
                 </label>
                 <div className="flex-1 flex flex-col gap-1">
-                  <span className="font-semibold text-lg">Anna Jones</span>
+                  <span className="font-semibold text-lg">{user?.name}</span>
                   <span className="text-sm text-muted-foreground">
-                    Arquiteta
+                    {user?.profession}
                   </span>
                   <span className="font-semibold text-sm mt-2">Sobre</span>
-                  <span className="text-sm text-muted-foreground">
-                    Ullamco veniam culpa excepteur id duis aliquip enim esse
-                    veniam.
-                  </span>
+                  {isEditingAbout ? (
+                    <div className="flex flex-col gap-2">
+                      <textarea
+                        value={about}
+                        onChange={(e) => setAbout(e.target.value)}
+                        className="text-sm text-muted-foreground p-2 border rounded-md"
+                        rows={3}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsEditingAbout(false)}
+                          disabled={isSaving}
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={handleSaveAbout}
+                          disabled={isSaving}
+                        >
+                          {isSaving ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                          ) : null}
+                          Salvar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm text-muted-foreground flex-1">
+                        {about ||
+                          "Adicione uma descrição sobre você ou seu escritório"}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="mt-[-4px]"
+                        onClick={() => setIsEditingAbout(true)}
+                      >
+                        <Pencil2Icon className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
@@ -713,30 +833,56 @@ export default function PortfolioPage() {
                     </>
                   )}
                 </label>
-                <div className="flex gap-2 items-center ml-4">
-                  <SwitchCustom
-                    checked={logoBgWhite}
-                    onChange={setLogoBgWhite}
-                  />
-                  <div
-                    className={`w-16 h-12 rounded-lg border flex items-center justify-center ${
-                      logoBgWhite ? "bg-white" : "bg-black"
-                    }`}
-                  >
-                    {/* Imagem da logo preview */}
-                    <span className="text-xs text-muted-foreground">
-                      {logoBgWhite ? "Branco" : "Preto"}
-                    </span>
+                <div className="flex gap-4 items-center ml-4">
+                  <div className="flex items-center gap-2">
+                    <SwitchCustom
+                      checked={logoBgWhite}
+                      onChange={setLogoBgWhite}
+                    />
                   </div>
-                  <div
-                    className={`w-16 h-12 rounded-lg border flex items-center justify-center ${
-                      !logoBgWhite ? "bg-white" : "bg-black"
-                    }`}
-                  >
-                    {/* Imagem da logo preview */}
-                    <span className="text-xs text-muted-foreground">
-                      {!logoBgWhite ? "Branco" : "Preto"}
-                    </span>
+                  <div className="flex gap-2">
+                    <div
+                      className={`w-20 h-16 rounded-lg border flex flex-col items-center justify-center transition-colors ${
+                        logoBgWhite ? "bg-white shadow-sm" : "bg-black"
+                      }`}
+                    >
+                      {/* Imagem da logo preview */}
+                      <span
+                        className={`text-xs ${
+                          logoBgWhite ? "text-black" : "text-white"
+                        }`}
+                      >
+                        Fundo
+                      </span>
+                      <span
+                        className={`text-xs font-medium ${
+                          logoBgWhite ? "text-black" : "text-white"
+                        }`}
+                      >
+                        {logoBgWhite ? "Claro" : "Escuro"}
+                      </span>
+                    </div>
+                    <div
+                      className={`w-20 h-16 rounded-lg border flex flex-col items-center justify-center transition-colors ${
+                        !logoBgWhite ? "bg-white shadow-sm" : "bg-black"
+                      }`}
+                    >
+                      {/* Imagem da logo preview */}
+                      <span
+                        className={`text-xs ${
+                          !logoBgWhite ? "text-black" : "text-white"
+                        }`}
+                      >
+                        Logo
+                      </span>
+                      <span
+                        className={`text-xs font-medium ${
+                          !logoBgWhite ? "text-black" : "text-white"
+                        }`}
+                      >
+                        {!logoBgWhite ? "Escura" : "Clara"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

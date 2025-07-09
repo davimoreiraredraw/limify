@@ -9,6 +9,7 @@ import {
 import { eq, and } from "drizzle-orm";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { desc } from "drizzle-orm";
 
 async function getUserId() {
   const cookieStore = cookies();
@@ -68,18 +69,39 @@ export async function GET() {
     // Buscar todos os orçamentos do usuário logado
     const result = await db
       .select({
-        id: budgets.id,
-        name: budgets.name,
+        budget: budgets,
         client_name: clientsTable.name,
-        total: budgets.total,
-        created_at: budgets.created_at,
       })
       .from(budgets)
+      .leftJoin(clientsTable, eq(budgets.client_id, clientsTable.id))
       .where(eq(budgets.user_id, userId))
-      .leftJoin(clientsTable, eq(clientsTable.id, budgets.client_id));
+      .orderBy(desc(budgets.created_at));
 
-    console.log("Orçamentos encontrados:", result.length);
-    return NextResponse.json(result);
+    // Formatar a resposta
+    const formattedBudgets = result.map((item) => ({
+      id: item.budget.id,
+      name: item.budget.name,
+      description: item.budget.description,
+      client_id: item.budget.client_id,
+      model: item.budget.model,
+      budget_type: item.budget.budget_type,
+      value_type: item.budget.value_type,
+      total: item.budget.total,
+      user_id: item.budget.user_id,
+      created_at: item.budget.created_at,
+      updated_at: item.budget.updated_at,
+      average_price_per_m2: item.budget.average_price_per_m2,
+      discount: item.budget.discount,
+      discount_type: item.budget.discount_type,
+      base_value: item.budget.base_value,
+      complexity_percentage: item.budget.complexity_percentage,
+      delivery_time_percentage: item.budget.delivery_time_percentage,
+      delivery_time_days: item.budget.delivery_time_days,
+      client_name: item.client_name,
+    }));
+
+    console.log("Orçamentos encontrados:", formattedBudgets.length);
+    return NextResponse.json(formattedBudgets);
   } catch (error) {
     console.error("Erro ao buscar orçamentos:", error);
     return NextResponse.json(

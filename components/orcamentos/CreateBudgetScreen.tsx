@@ -15,6 +15,7 @@ interface CreateBudgetScreenProps {
   setSelectedBudgetType: Dispatch<SetStateAction<string | null>>;
   budgetStep: number;
   setBudgetStep: Dispatch<SetStateAction<number>>;
+  fetchBudgets: () => void;
 }
 
 export default function CreateBudgetScreen({
@@ -23,12 +24,14 @@ export default function CreateBudgetScreen({
   selectedBudgetType,
   setSelectedBudgetType,
   budgetStep,
+  fetchBudgets,
   setBudgetStep,
 }: CreateBudgetScreenProps) {
   const finishBudget = () => {
     setIsCreatingBudget(false);
     setBudgetStep(0);
     setSelectedBudgetType(null);
+    fetchBudgets();
   };
 
   return (

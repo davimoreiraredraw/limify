@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { ExpensesTable, CategoriesTable } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, isNull } from "drizzle-orm";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
@@ -128,13 +128,22 @@ export async function PATCH(
       );
     }
 
+    // Preparar os dados para atualização
+    const updateData = {
+      name: body.name,
+      description: body.description,
+      value: body.value,
+      frequency: body.frequency,
+      compensationDay: body.compensation_day,
+      categoryId: body.category_id,
+      isFixed: body.is_fixed,
+      updatedAt: new Date(),
+    };
+
     // Atualizar a despesa
     const updatedExpenses = await db
       .update(ExpensesTable)
-      .set({
-        ...body,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(and(eq(ExpensesTable.id, id), eq(ExpensesTable.userId, user.id)))
       .returning();
 
@@ -146,17 +155,29 @@ export async function PATCH(
     }
 
     // Buscar a categoria atualizada
-    const category = body.category_id
-      ? await db.query.CategoriesTable.findFirst({
-          where: eq(CategoriesTable.id, body.category_id),
-        })
-      : null;
+    let category = null;
+    if (body.category_id) {
+      const categories = await db
+        .select()
+        .from(CategoriesTable)
+        .where(
+          or(
+            eq(CategoriesTable.id, body.category_id),
+            isNull(CategoriesTable.userId)
+          )
+        );
+      category = categories[0];
+    }
 
     // Formatar a resposta
     const expense = {
-      ...updatedExpenses[0],
-      category_id: updatedExpenses[0].categoryId,
+      id: updatedExpenses[0].id,
+      name: updatedExpenses[0].name,
+      description: updatedExpenses[0].description,
+      value: updatedExpenses[0].value,
+      frequency: updatedExpenses[0].frequency,
       compensation_day: updatedExpenses[0].compensationDay,
+      category_id: updatedExpenses[0].categoryId,
       is_fixed: updatedExpenses[0].isFixed,
       is_active: updatedExpenses[0].isActive,
       is_archived: updatedExpenses[0].isArchived,
@@ -168,7 +189,7 @@ export async function PATCH(
             name: category.name,
             color: category.color,
           }
-        : undefined,
+        : null,
     };
 
     return NextResponse.json({ expense });

@@ -67,7 +67,7 @@ export default function BudgetCompleteForm({
     "previous"
   );
   const [previousBudgetName, setPreviousBudgetName] = useState("");
-  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const [selectedCurrency, setSelectedCurrency] = useState("BRL");
   const [profitConfig, setProfitConfig] = useState<"final" | "category">(
     "category"
   );

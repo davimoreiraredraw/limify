@@ -11,6 +11,7 @@ import {
   integer,
   numeric,
   index,
+  serial,
 } from "drizzle-orm/pg-core";
 import { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
@@ -71,8 +72,9 @@ export const quotes = pgTable("quotes", {
 // Tabela de categorias
 export const CategoriesTable = pgTable("categories", {
   id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull().unique(),
-  color: text("color").notNull().default("#6366f1"),
+  name: text("name").notNull(),
+  color: text("color").notNull(),
+  userId: text("user_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -189,9 +191,7 @@ export const teamRoleEnum = pgEnum("team_role", ["owner", "admin", "member"]);
 export const teamsTable = pgTable("teams", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
-  ownerId: text("owner_id")
-    .references(() => profiles.id)
-    .notNull(),
+  ownerId: text("owner_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -202,9 +202,9 @@ export const teamMembersTable = pgTable("team_members", {
   teamId: uuid("team_id")
     .references(() => teamsTable.id)
     .notNull(),
-  userId: text("user_id")
-    .references(() => profiles.id)
-    .notNull(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  email: text("email"),
   role: teamRoleEnum("role").default("member").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -429,6 +429,15 @@ export const portfolioScripts = pgTable("portfolio_scripts", {
   user_id: text("user_id").notNull(),
   header_script: text("header_script"),
   footer_script: text("footer_script"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const portfolioBrand = pgTable("portfolio_brand", {
+  id: serial("id").primaryKey(),
+  user_id: text("user_id").notNull().unique(),
+  about: text("about"),
+  logo_url: text("logo_url"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });

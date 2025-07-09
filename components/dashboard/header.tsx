@@ -30,7 +30,6 @@ export function DashboardHeader() {
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle menu</span>
         </Button>
-
         <Link href="/" className="flex items-center">
           <Image
             src="/short_logo.png"
@@ -43,7 +42,7 @@ export function DashboardHeader() {
       </div>
 
       <div className="hidden lg:block">
-        <h1 className="text-lg font-medium">Eai Limifier!</h1>
+        <h1 className="text-lg font-medium">Eai {user?.name || "Limifier"}!</h1>
         <p className="text-sm text-muted-foreground">O que vamos orçar hoje?</p>
       </div>
 

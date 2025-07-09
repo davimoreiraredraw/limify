@@ -153,9 +153,9 @@ export default function TeamPage() {
             <div className="flex items-center">
               <Checkbox className="rounded-[4px] border-gray-300" />
             </div>
-            <div className="text-sm font-medium text-gray-500">NAME</div>
-            <div className="text-sm font-medium text-gray-500">EMAIL</div>
-            <div className="text-sm font-medium text-gray-500">ROLE</div>
+            <div className="text-sm font-medium text-gray-500">Nome</div>
+            <div className="text-sm font-medium text-gray-500">Email</div>
+            <div className="text-sm font-medium text-gray-500">Cargo</div>
             <div className="text-sm font-medium text-gray-500">Ações</div>
           </div>
 
@@ -201,7 +201,7 @@ export default function TeamPage() {
                 </div>
                 <div className="flex items-center">
                   <button className="text-[#6E2DFA] text-sm font-medium hover:text-[#6E2DFA]/90">
-                    Edit
+                    Editar
                   </button>
                 </div>
               </div>

@@ -121,16 +121,26 @@ export default function BudgetCard({ budget, index }: BudgetCardProps) {
           {/* Labels/etiquetas */}
           <div className="mt-4 flex flex-wrap gap-2 mb-3">
             <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-              Label 1
+              {(() => {
+                switch (budget.budget_type) {
+                  case "complete":
+                    return "Projeto Completo";
+                  case "m2":
+                    return "Por m²";
+                  case "render":
+                    return "Render";
+                  case "modeling":
+                    return "Modelagem";
+                  case "price":
+                    return "Por preço da obra";
+                  default:
+                    return "Completo";
+                }
+              })()}
             </span>
-            {(budget.id === "1" || budget.id === "2") && (
+            {budget.model && (
               <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800">
-                Label 2
-              </span>
-            )}
-            {budget.id === "5" && (
-              <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                Label 3
+                {budget.model === "interior" ? "Interiores" : "Exteriores"}
               </span>
             )}
           </div>

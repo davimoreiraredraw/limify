@@ -75,17 +75,23 @@ export function useAuth() {
 
   async function signIn(email: string, password: string) {
     try {
-      console.log("signIn", email, password);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      console.log("data", data);
       if (error) {
+        toast.error("Erro ao fazer login", {
+          description: error?.message.includes("Invalid login credentials")
+            ? "Email ou senha inválidos"
+            : "Tente novamente mais tarde",
+        });
         throw error;
       }
 
       if (!data?.user) {
+        toast.error("Erro ao fazer login", {
+          description: "Usuário não encontrado",
+        });
         throw new Error("Usuário não encontrado");
       }
 
@@ -115,9 +121,10 @@ export function useAuth() {
         window.location.href = "/dashboard";
       }
     } catch (error: any) {
-      console.error("Erro completo:", error);
       toast.error("Erro ao fazer login", {
-        description: error?.message || "Tente novamente mais tarde",
+        description: error?.message.includes("Invalid login credentials")
+          ? "Email ou senha inválidos"
+          : "Tente novamente mais tarde",
       });
       throw error;
     }
@@ -150,6 +157,27 @@ export function useAuth() {
         throw new Error("Erro ao criar usuário");
       }
 
+      // Criar equipe para o usuário
+      try {
+        const response = await fetch("/api/teams/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: data.user.id,
+            name,
+            email,
+          }),
+        });
+
+        if (!response.ok) {
+          console.error("Erro ao criar equipe inicial");
+        }
+      } catch (error) {
+        console.error("Erro ao criar equipe:", error);
+      }
+
       // O perfil será criado automaticamente pelo trigger do Supabase
       toast.success("Conta criada com sucesso!", {
         description: "Verifique seu email para confirmar sua conta.",
@@ -158,7 +186,9 @@ export function useAuth() {
       router.push("/login");
     } catch (error: any) {
       toast.error("Erro ao criar conta", {
-        description: error?.message || "Tente novamente mais tarde",
+        description: error?.message.includes("User already registered")
+          ? "Email já cadastrado"
+          : "Tente novamente mais tarde",
       });
     }
   }
@@ -179,10 +209,58 @@ export function useAuth() {
     }
   }
 
+  async function resetPassword(email: string) {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        toast.error("Erro ao enviar email", {
+          description: error?.message || "Tente novamente mais tarde",
+        });
+        throw error;
+      }
+
+      toast.success("Email enviado com sucesso!", {
+        description: "Verifique sua caixa de entrada para redefinir sua senha.",
+      });
+    } catch (error: any) {
+      toast.error("Erro ao enviar email", {
+        description: error?.message || "Tente novamente mais tarde",
+      });
+    }
+  }
+
+  async function updatePassword(newPassword: string) {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        toast.error("Erro ao atualizar senha", {
+          description: error?.message || "Tente novamente mais tarde",
+        });
+        throw error;
+      }
+
+      toast.success("Senha atualizada com sucesso!");
+      router.push("/login");
+    } catch (error: any) {
+      toast.error("Erro ao atualizar senha", {
+        description: error?.message || "Tente novamente mais tarde",
+      });
+      throw error;
+    }
+  }
+
   return {
     user,
     signIn,
     signUp,
     signOut,
+    resetPassword,
+    updatePassword,
   };
 }

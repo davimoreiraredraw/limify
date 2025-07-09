@@ -13,6 +13,18 @@ interface BudgetWithTotal extends Budget {
   total?: number;
   name?: string;
   client_name?: string;
+  created_at?: string;
+  description?: string;
+  model?: string;
+  budget_type?: string;
+  value_type?: string;
+  average_price_per_m2?: number;
+  discount?: number;
+  discount_type?: string;
+  base_value?: number;
+  complexity_percentage?: number;
+  delivery_time_percentage?: number;
+  delivery_time_days?: number;
 }
 
 interface BudgetKanbanProps {
@@ -267,16 +279,31 @@ export default function BudgetKanban({
                         // Garantir que o budget tem todas as propriedades necessárias
                         const normalizedBudget: BudgetWithTotal = {
                           ...budget,
-                          // Garantir que temos project e client
-                          project: budget.project || budget.name || "",
-                          client: budget.client || budget.client_name || "",
+                          // Usar as propriedades reais do orçamento
+                          project: budget.name || "",
+                          client: budget.client_name || "Limify",
+                          company: "Limify",
                           // Garantir que temos um valor para price
                           price:
-                            typeof budget.price === "number"
-                              ? budget.price
-                              : budget.total || 0,
-                          // Garantir que temos um status
-                          status: budget.status || "Pendente",
+                            typeof budget.total === "number" ? budget.total : 0,
+                          // Garantir que temos um status baseado no tipo de orçamento
+                          status:
+                            budget.budget_type === "complete"
+                              ? "Completo"
+                              : "Pendente",
+                          // Definir coluna padrão se não existir
+                          column: budget.column || "GERADO",
+                          // Manter as datas originais
+                          date: budget.created_at || new Date().toISOString(),
+                          // Calcular custo e lucro (você pode ajustar essa lógica conforme necessário)
+                          cost:
+                            typeof budget.total === "number"
+                              ? budget.total * 0.7
+                              : 0,
+                          profit:
+                            typeof budget.total === "number"
+                              ? budget.total * 0.3
+                              : 0,
                         };
 
                         return (

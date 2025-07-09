@@ -1,0 +1,1 @@
+ALTER TABLE "portfolio_brand" ADD CONSTRAINT "portfolio_brand_user_id_unique" UNIQUE("user_id");

@@ -3,19 +3,12 @@ export type { Category };
 // Função para buscar todas as categorias
 export async function fetchCategories(): Promise<Category[]> {
   try {
-    const response = await fetch("/api/categories", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
+    const response = await fetch("/api/categories");
     if (!response.ok) {
       throw new Error("Erro ao buscar categorias");
     }
-
     const data = await response.json();
-    return data.categories || [];
+    return data.categories;
   } catch (error) {
     console.error("Erro ao buscar categorias:", error);
     return [];
@@ -45,9 +38,9 @@ export async function fetchCategory(id: string): Promise<Category | null> {
 }
 
 // Função para criar uma nova categoria
-export async function createCategory(
-  categoryData: Omit<Category, "id">
-): Promise<Category | null> {
+export async function createCategory(categoryData: {
+  name: string;
+}): Promise<Category | null> {
   try {
     const response = await fetch("/api/categories", {
       method: "POST",
@@ -58,12 +51,11 @@ export async function createCategory(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Erro ao criar categoria");
+      throw new Error("Erro ao criar categoria");
     }
 
     const data = await response.json();
-    return data.category || null;
+    return data.category;
   } catch (error) {
     console.error("Erro ao criar categoria:", error);
     return null;
@@ -73,24 +65,25 @@ export async function createCategory(
 // Função para atualizar uma categoria existente
 export async function updateCategory(
   id: string,
-  categoryData: Partial<Category>
+  categoryData: {
+    name: string;
+  }
 ): Promise<Category | null> {
   try {
-    const response = await fetch(`/api/categories/${id}`, {
-      method: "PATCH",
+    const response = await fetch(`/api/categories`, {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(categoryData),
+      body: JSON.stringify({ id, ...categoryData }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Erro ao atualizar categoria");
+      throw new Error("Erro ao atualizar categoria");
     }
 
     const data = await response.json();
-    return data.category || null;
+    return data.category;
   } catch (error) {
     console.error("Erro ao atualizar categoria:", error);
     return null;
@@ -98,30 +91,20 @@ export async function updateCategory(
 }
 
 // Função para excluir uma categoria
-export async function deleteCategory(
-  id: string
-): Promise<{ success: boolean; error?: string; hasRelations?: boolean }> {
+export async function deleteCategory(id: string): Promise<boolean> {
   try {
-    const response = await fetch(`/api/categories/${id}`, {
+    const response = await fetch(`/api/categories?id=${id}`, {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      return {
-        success: false,
-        error: errorData.error || "Erro ao excluir categoria",
-        hasRelations: errorData.hasRelations,
-      };
+      throw new Error("Erro ao excluir categoria");
     }
 
-    return { success: true };
+    return true;
   } catch (error) {
     console.error("Erro ao excluir categoria:", error);
-    return { success: false, error: "Erro interno do servidor" };
+    return false;
   }
 }
 
