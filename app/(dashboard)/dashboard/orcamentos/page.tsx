@@ -634,11 +634,42 @@ export default function OrcamentosPage() {
                 </td>
               </tr>
             ) : !Array.isArray(budgets) || budgets.length === 0 ? (
-              <tr>
-                <td colSpan={11} className="text-center py-10">
-                  Nenhum orçamento encontrado
-                </td>
-              </tr>
+              <div className="rounded-lg border bg-card shadow-sm">
+                <div className="flex flex-col items-center justify-center py-16">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                        <div className="w-4 h-4 bg-gray-500 rounded-full flex items-center justify-center relative">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 w-1 h-1 bg-gray-400 rounded-full"></div>
+                          <div className="absolute -bottom-0.5 -right-0.5 w-0.5 h-0.5 bg-gray-400 rounded-full"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Crie um orçamento
+                      </h3>
+                      <p className="text-gray-600 mb-6">
+                        Nenhum orçamento para exibir, crie um novo agora para
+                        avançar no seu projeto
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        <Button
+                          size="sm"
+                          className="bg-primary hover:bg-primary/90 text-white gap-2 px-4 py-2"
+                          onClick={() => setIsCreatingBudget(true)}
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          Gerar um orçamento
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
               budgets.map((budget) => {
                 // Convertendo para o tipo Budget para acessar as propriedades de status
@@ -1083,6 +1114,43 @@ export default function OrcamentosPage() {
 
           {view === "list" ? (
             renderTable()
+          ) : budgets.length === 0 && !isLoading ? (
+            <div className="rounded-lg border bg-card shadow-sm">
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                      <div className="w-4 h-4 bg-gray-500 rounded-full flex items-center justify-center relative">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-1 h-1 bg-gray-400 rounded-full"></div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-0.5 h-0.5 bg-gray-400 rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Crie um orçamento
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Nenhum orçamento para exibir, crie um novo agora para
+                      avançar no seu projeto
+                    </p>
+                    <div className="flex flex-col gap-3">
+                      <Button
+                        size="sm"
+                        className="bg-primary hover:bg-primary/90 text-white gap-2 px-4 py-2"
+                        onClick={() => setIsCreatingBudget(true)}
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        Gerar um orçamento
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
             <BudgetKanban
               columns={columns}
@@ -1099,7 +1167,6 @@ export default function OrcamentosPage() {
                   total: b.total,
                   created_at: b.created_at,
                 };
-                console.log("Budget para Kanban:", budgetForKanban);
                 return budgetForKanban;
               })}
               setBudgets={(

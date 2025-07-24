@@ -452,7 +452,7 @@ export function UserOnboardingForm({
       toast.success("Onboarding concluído com sucesso!");
 
       // Redirecionar para o dashboard
-      router.push("/dashboard");
+      router.push("/bem-vindo");
     } catch (error: any) {
       toast.error("Erro ao finalizar onboarding", {
         description: error.message || "Tente novamente mais tarde",

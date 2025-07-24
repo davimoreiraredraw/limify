@@ -55,6 +55,24 @@ export function useClients() {
       const response = await fetch("/api/clients");
 
       if (!response.ok) {
+        // Se a resposta for 401, tentar migrar clientes existentes
+        if (response.status === 401) {
+          const migrateResponse = await fetch("/api/clients/migrate", {
+            method: "POST",
+          });
+
+          if (migrateResponse.ok) {
+            // Tentar buscar novamente após a migração
+            const retryResponse = await fetch("/api/clients");
+            if (retryResponse.ok) {
+              const data: ApiClient[] = await retryResponse.json();
+              const mappedClients = data.map(mapApiClientToClient);
+              setClients(mappedClients);
+              return mappedClients;
+            }
+          }
+        }
+
         throw new Error(`Erro ao buscar clientes: ${response.status}`);
       }
 

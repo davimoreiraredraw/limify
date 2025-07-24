@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getClients, createClient } from "@/lib/clients";
 import { z } from "zod";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 // Schema de validação para criação de cliente
 const createClientSchema = z.object({
@@ -15,7 +17,34 @@ const createClientSchema = z.object({
 
 export async function GET() {
   try {
-    const clients = await getClients();
+    // Criar cliente do Supabase
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    // Obter usuário autenticado
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Usuário não autenticado" },
+        { status: 401 }
+      );
+    }
+
+    const userId = session.user.id;
+    const clients = await getClients(userId);
     return NextResponse.json(clients);
   } catch (error) {
     console.error("Erro ao buscar clientes:", error);
@@ -28,6 +57,33 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Criar cliente do Supabase
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    // Obter usuário autenticado
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Usuário não autenticado" },
+        { status: 401 }
+      );
+    }
+
+    const userId = session.user.id;
     const body = await request.json();
 
     // Validar os dados recebidos
@@ -44,7 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     const clientData = validationResult.data;
-    const newClient = await createClient(clientData);
+    const newClient = await createClient(clientData, userId);
 
     return NextResponse.json(newClient, { status: 201 });
   } catch (error) {

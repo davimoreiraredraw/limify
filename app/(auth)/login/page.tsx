@@ -98,7 +98,7 @@ export default function LoginPage() {
 
             {formType === "login" && (
               <>
-                <div className="relative">
+                {/* <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t" />
                   </div>
@@ -107,10 +107,10 @@ export default function LoginPage() {
                       ou
                     </span>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Botões de login social */}
-                <div className="flex gap-2">
+                {/* <div className="flex gap-2">
                   <button className="flex-1 flex items-center justify-center gap-2 p-2 border rounded-lg hover:bg-accent">
                     <Image
                       src="/google.svg"
@@ -129,7 +129,7 @@ export default function LoginPage() {
                       className="w-5 h-5"
                     />
                   </button>
-                </div>
+                </div> */}
               </>
             )}
           </div>

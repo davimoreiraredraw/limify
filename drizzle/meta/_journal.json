@@ -162,6 +162,27 @@
       "when": 1752073670974,
       "tag": "0023_cuddly_tigra",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1753105826540,
+      "tag": "0024_silent_the_hand",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1753106037305,
+      "tag": "0025_friendly_gorilla_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1753296995676,
+      "tag": "0026_natural_energizer",
+      "breakpoints": true
     }
   ]
 }

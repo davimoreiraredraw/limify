@@ -17,11 +17,13 @@ import { toast } from "sonner";
 interface ClientsModalProps {
   isClientModalOpen: boolean;
   setIsClientModalOpen: Dispatch<SetStateAction<boolean>>;
+  onClientSelect?: (client: Client) => void;
 }
 
 export default function ClientsModal({
   isClientModalOpen,
   setIsClientModalOpen,
+  onClientSelect,
 }: ClientsModalProps) {
   // Estados para o modal de cadastro/edição de cliente
   const [isClientFormOpen, setIsClientFormOpen] = useState(false);
@@ -99,6 +101,14 @@ export default function ClientsModal({
   const handleCloseForm = () => {
     setIsClientFormOpen(false);
     fetchClients(); // Atualiza a lista após adicionar/editar
+  };
+
+  // Função para selecionar um cliente
+  const handleSelectClient = (client: Client) => {
+    if (onClientSelect) {
+      onClientSelect(client);
+    }
+    setIsClientModalOpen(false);
   };
 
   return (
@@ -216,6 +226,29 @@ export default function ClientsModal({
                         {client.budgetsCount || 0}
                       </div>
                       <div className="col-span-3 text-right flex justify-end gap-2">
+                        {onClientSelect && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-green-600"
+                            onClick={() => handleSelectClient(client)}
+                            title="Selecionar cliente"
+                          >
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"

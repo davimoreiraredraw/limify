@@ -37,9 +37,6 @@ export default function BudgetM2Form({
   const [clientName, setClientName] = useState("");
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
-  const [selectedClientOption, setSelectedClientOption] = useState<
-    "existing" | "later" | null
-  >("existing");
 
   // Campos específicos para orçamento por m²
   const [squareMeters, setSquareMeters] = useState<number>(0);
@@ -135,6 +132,7 @@ export default function BudgetM2Form({
     setClientId(client.id);
     setClientName(client.name);
     setClientSearch(client.name);
+    setShowClientsModal(false);
   };
 
   const handleCreateClient = async (formData: any) => {
@@ -186,10 +184,6 @@ export default function BudgetM2Form({
       setTotalPrice(squareMeters * pricePerSquareMeter);
     }
   }, [squareMeters, pricePerSquareMeter, selectedBudgetType]);
-
-  const handleClientSelect = (option: "existing" | "later") => {
-    setSelectedClientOption(option);
-  };
 
   // Função para adicionar um novo item
   const addNewItem = () => {
@@ -245,8 +239,7 @@ export default function BudgetM2Form({
       const payload = {
         name: projectName,
         description: projectDescription,
-        client_id:
-          selectedClientOption === "existing" && clientId ? clientId : null,
+        client_id: clientId ? clientId : null,
         model: tipoAmbiente,
         budget_type: selectedBudgetType,
         value_type: valorComodos,
@@ -287,126 +280,89 @@ export default function BudgetM2Form({
       case 1:
         return (
           <div className="mb-12">
-            <div className="mb-12">
-              <h3 className="text-xl font-semibold mb-6">
-                Quem é seu cliente?
-              </h3>
+            <h3 className="text-xl font-semibold mb-6">Quem é seu cliente?</h3>
 
-              <div className="grid grid-cols-1 gap-6">
-                <div
-                  className={`border rounded-lg p-5 ${
-                    selectedClientOption === "existing"
-                      ? "border-indigo-600 bg-indigo-50"
-                      : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div
-                      className={`w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer ${
-                        selectedClientOption === "existing"
-                          ? "border-indigo-600"
-                          : ""
-                      }`}
-                      onClick={() => handleClientSelect("existing")}
-                    >
-                      {selectedClientOption === "existing" && (
-                        <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
-                      )}
+            <div className="space-y-4">
+              <div className="border rounded-lg p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-medium">Nome do cliente</h4>
+                  <span className="text-xs text-gray-500">Opcional</span>
+                </div>
+
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <UserIcon className="h-4 w-4 text-gray-400" />
                     </div>
-                    <h4 className="font-medium">Nome do cliente</h4>
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      className="pl-10 pr-4 py-2 w-full border rounded-md text-sm"
+                      placeholder="Selecione um cliente ou crie um novo"
+                      value={clientSearch}
+                      onChange={(e) => {
+                        setClientSearch(e.target.value);
+                        setClientId(null);
+                      }}
+                      autoComplete="off"
+                      onClick={() => setShowClientsModal(true)}
+                      readOnly
+                    />
                   </div>
+                  <Button
+                    className="bg-indigo-600 text-white"
+                    onClick={() => setShowClientsModal(true)}
+                  >
+                    Selecionar
+                  </Button>
+                </div>
 
-                  {selectedClientOption === "existing" && (
-                    <div className="pl-8">
-                      <p className="text-sm text-gray-500 mb-2">
-                        Busque seu cliente ou crie um novo
-                      </p>
-                      <div className="flex gap-2 relative">
-                        <div className="relative flex-1">
-                          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <UserIcon className="h-4 w-4 text-gray-400" />
-                          </div>
-                          <input
-                            ref={inputRef}
-                            type="text"
-                            className="pl-10 pr-4 py-2 w-full border rounded-md text-sm"
-                            placeholder="Nome do cliente"
-                            value={clientSearch}
-                            onChange={(e) => {
-                              setClientSearch(e.target.value);
-                              setClientId(null);
-                            }}
-                            autoComplete="off"
-                          />
-                          {clientSearch && filteredClients.length > 0 && (
-                            <ul className="absolute z-10 left-0 right-0 bg-white border rounded shadow mt-1 max-h-48 overflow-y-auto">
-                              {filteredClients.map((client) => (
-                                <li
-                                  key={client.id}
-                                  className="px-4 py-2 cursor-pointer hover:bg-indigo-50 flex items-center gap-2"
-                                  onClick={() => handleSelectClient(client)}
-                                >
-                                  {client.photoUrl ? (
-                                    <img
-                                      src={client.photoUrl}
-                                      alt={client.name}
-                                      className="w-6 h-6 rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    <span className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
-                                      {client.name.charAt(0)}
-                                    </span>
-                                  )}
-                                  <span>{client.name}</span>
-                                  {client.email && (
-                                    <span className="ml-2 text-xs text-gray-400">
-                                      {client.email}
-                                    </span>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
+                {clientId &&
+                  (() => {
+                    const selectedClient = clients.find(
+                      (c) => c.id === clientId
+                    );
+                    if (!selectedClient) return null;
+
+                    return (
+                      <div className="mt-3 p-3 bg-indigo-50 rounded-md">
+                        <div className="flex items-center gap-3">
+                          {selectedClient.photoUrl ? (
+                            <img
+                              src={selectedClient.photoUrl}
+                              alt={selectedClient.name}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">
+                              {selectedClient.name.charAt(0)}
+                            </span>
                           )}
+                          <div>
+                            <div className="font-medium text-sm">
+                              {selectedClient.name}
+                            </div>
+                            {selectedClient.email && (
+                              <div className="text-xs text-gray-500">
+                                {selectedClient.email}
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="ml-auto text-red-600 hover:text-red-700"
+                            onClick={() => {
+                              setClientId(null);
+                              setClientSearch("");
+                            }}
+                          >
+                            Remover
+                          </Button>
                         </div>
-                        <Button
-                          className="bg-indigo-600 text-white"
-                          onClick={() => setShowClientsModal(true)}
-                        >
-                          Criar
-                        </Button>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                <div
-                  className={`border rounded-lg p-5 ${
-                    selectedClientOption === "later"
-                      ? "border-indigo-600 bg-indigo-50"
-                      : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer ${
-                        selectedClientOption === "later"
-                          ? "border-indigo-600"
-                          : ""
-                      }`}
-                      onClick={() => handleClientSelect("later")}
-                    >
-                      {selectedClientOption === "later" && (
-                        <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Adicionar depois</h4>
-                      <p className="text-sm text-gray-500">
-                        Quero deixar para depois
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                    );
+                  })()}
               </div>
             </div>
 
@@ -1350,6 +1306,7 @@ export default function BudgetM2Form({
         <ClientsModal
           isClientModalOpen={showClientsModal}
           setIsClientModalOpen={setShowClientsModal}
+          onClientSelect={handleSelectClient}
         />
       )}
     </>

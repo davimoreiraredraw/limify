@@ -19,6 +19,7 @@ export interface Expense {
   created_at: string | Date;
   updated_at: string | Date;
   category?: Category;
+  is_deleted: boolean;
 }
 
 // Função para buscar todas as despesas

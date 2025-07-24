@@ -250,7 +250,7 @@ export function DashboardSidebar() {
               isCollapsed && !isMobile ? "p-3" : "p-4"
             )}
           >
-            {(!isCollapsed || isMobile) && (
+            {/* {(!isCollapsed || isMobile) && (
               <h3 className="mb-4 text-sm font-medium">Em andamento</h3>
             )}
             <div className="flex justify-center">
@@ -266,7 +266,7 @@ export function DashboardSidebar() {
                 <span className="font-medium">$152k</span>
                 <span className="text-muted-foreground">/$220k</span>
               </div>
-            )}
+            )} */}
           </motion.div>
         </div>
       </motion.aside>

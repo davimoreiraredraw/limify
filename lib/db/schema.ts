@@ -25,6 +25,7 @@ export const clientsTable = pgTable("clients", {
   document: varchar("document", { length: 20 }),
   additionalInfo: text("additional_info"),
   photoUrl: text("photo_url"),
+  userId: text("user_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -91,6 +92,7 @@ export const ExpensesTable = pgTable("expenses", {
   isFixed: boolean("is_fixed").notNull().default(true),
   isActive: boolean("is_active").notNull().default(true),
   isArchived: boolean("is_archived").notNull().default(false),
+  isDeleted: boolean("is_deleted").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

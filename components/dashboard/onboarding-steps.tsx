@@ -39,7 +39,11 @@ export function OnboardingSteps() {
 
   const handleStepClick = (step: OnboardingStep) => {
     setCurrentStep(step.number);
-    router.push(step.path);
+    if (step.number === 1) {
+      router.push(`${step.path}?highlight=add-expense`);
+    } else {
+      router.push(step.path);
+    }
   };
 
   return (

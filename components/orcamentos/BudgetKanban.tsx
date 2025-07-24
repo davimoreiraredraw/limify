@@ -317,13 +317,13 @@ export default function BudgetKanban({
                     )}
                     {provided.placeholder}
 
-                    <Button
+                    {/* <Button
                       variant="ghost"
                       className="mt-3 w-full justify-start text-gray-500 text-sm bg-white border border-gray-200 shadow-sm hover:bg-gray-100"
                     >
                       <PlusCircle className="mr-2 h-4 w-4" />
                       Adicionar orçamento
-                    </Button>
+                    </Button> */}
                   </div>
                 )}
               </Droppable>

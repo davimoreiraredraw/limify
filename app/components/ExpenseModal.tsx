@@ -174,23 +174,34 @@ export default function ExpenseModal({
   const handleDelete = async () => {
     if (!initialData.id) return;
 
-    if (!confirm("Tem certeza que deseja excluir esta despesa?")) {
+    if (!confirm("Tem certeza que deseja mover esta despesa para a lixeira?")) {
       return;
     }
 
     setIsLoading(true);
     try {
-      const result = await deleteExpense(initialData.id);
-      if (result) {
-        toast.success("Despesa excluída com sucesso");
-        onSubmit(true);
-        onClose();
-      } else {
-        toast.error("Erro ao excluir despesa");
+      const response = await fetch("/api/expenses", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: initialData.id,
+          action: "trash",
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Falha ao mover para lixeira");
       }
-    } catch (error) {
-      console.error("Erro ao excluir despesa:", error);
-      toast.error("Ocorreu um erro ao excluir a despesa");
+
+      toast.success("Despesa movida para lixeira");
+      onSubmit(true); // Isso vai forçar a atualização da lista
+      onClose();
+    } catch (error: any) {
+      console.error("Erro ao mover para lixeira:", error);
+      toast.error(error.message || "Erro ao mover despesa para lixeira");
     } finally {
       setIsLoading(false);
     }
@@ -235,12 +246,12 @@ export default function ExpenseModal({
     <>
       {/* Overlay escuro */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-30 z-40"
+        className="fixed inset-0 bg-black bg-opacity-30 z-[60]"
         onClick={onClose}
       />
 
       {/* Painel lateral */}
-      <div className="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white shadow-lg z-50 transform">
+      <div className="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white shadow-lg z-[61] transform">
         <style jsx global>{`
           @keyframes slideIn {
             from {

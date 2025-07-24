@@ -1,13 +1,8 @@
 "use client";
 
 import { StatsChart } from "@/components/dashboard/stats-chart";
-import {
-  CalendarIcon,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  Loader2,
-} from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { CheckCircle2, Clock, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
@@ -128,19 +123,24 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
 
-        // Buscar estatísticas
-        const statsResponse = await fetch("/api/dashboard/stats");
+        // Buscar estatísticas com filtro de data
+        const statsResponse = await fetch(
+          `/api/dashboard/stats?date=${selectedDate.toISOString()}`
+        );
         const statsData = await statsResponse.json();
         setStats(statsData);
 
-        // Buscar orçamentos
-        const quotesResponse = await fetch("/api/dashboard/quotes");
+        // Buscar orçamentos com filtro de data
+        const quotesResponse = await fetch(
+          `/api/dashboard/quotes?date=${selectedDate.toISOString()}`
+        );
         const quotesData = await quotesResponse.json();
         setQuotes(quotesData);
       } catch (error) {
@@ -151,7 +151,13 @@ export default function DashboardPage() {
     };
 
     fetchData();
-  }, []);
+  }, [selectedDate]);
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+    }
+  };
 
   if (isLoading || !stats) {
     return <LoadingSkeleton />;
@@ -161,13 +167,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-8 p-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <Button variant="outline" size="sm" className="gap-2">
-          <CalendarIcon className="h-4 w-4" />
-          {new Date().toLocaleDateString("pt-BR", {
-            month: "long",
-            year: "numeric",
-          })}
-        </Button>
+        <DatePicker date={selectedDate} onDateChange={handleDateChange} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -181,16 +181,6 @@ export default function DashboardPage() {
                 <span className="text-2xl font-medium">
                   {stats.orcamentosRealizados.value}
                 </span>
-                <span
-                  className={`text-sm ${
-                    stats.orcamentosRealizados.trend === "up"
-                      ? "text-emerald-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {stats.orcamentosRealizados.trend === "up" ? "↑" : "↓"}{" "}
-                  {stats.orcamentosRealizados.percentage}%
-                </span>
               </div>
             </div>
           </div>
@@ -201,16 +191,6 @@ export default function DashboardPage() {
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-medium">
                   {formatCurrency(stats.faturamento.value)}
-                </span>
-                <span
-                  className={`text-sm ${
-                    stats.faturamento.trend === "up"
-                      ? "text-emerald-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {stats.faturamento.trend === "up" ? "↑" : "↓"}{" "}
-                  {stats.faturamento.percentage}%
                 </span>
               </div>
             </div>
@@ -225,16 +205,6 @@ export default function DashboardPage() {
                 <span className="text-2xl font-medium">
                   {stats.projetosFechados.value}
                 </span>
-                <span
-                  className={`text-sm ${
-                    stats.projetosFechados.trend === "up"
-                      ? "text-emerald-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {stats.projetosFechados.trend === "up" ? "↑" : "↓"}{" "}
-                  {stats.projetosFechados.percentage}%
-                </span>
               </div>
             </div>
           </div>
@@ -242,7 +212,7 @@ export default function DashboardPage() {
           <div className="rounded-lg border bg-card p-6 shadow-sm">
             <div className="flex flex-col gap-4">
               <span className="text-sm text-muted-foreground">
-                Gastos fixos
+                Gastos fixos mensais
               </span>
               <div className="flex flex-col">
                 <div className="flex items-center gap-1 text-red-500">
@@ -251,16 +221,9 @@ export default function DashboardPage() {
                     {formatCurrency(stats.gastosFixos.value).replace("-", "")}
                   </span>
                 </div>
-                <div
-                  className={`flex items-center gap-1 ${
-                    stats.gastosFixos.trend === "up"
-                      ? "text-emerald-500"
-                      : "text-red-500"
-                  } text-sm`}
-                >
-                  <span>{stats.gastosFixos.trend === "up" ? "↑" : "↓"}</span>
-                  <span>{stats.gastosFixos.percentage}%</span>
-                </div>
+                <span className="text-xs text-muted-foreground">
+                  Valor mensal recorrente
+                </span>
               </div>
             </div>
           </div>
@@ -270,14 +233,19 @@ export default function DashboardPage() {
           <div className="mb-6">
             <h2 className="text-lg font-semibold">Estatísticas</h2>
             <p className="text-sm text-muted-foreground">
-              {new Date().toLocaleDateString("pt-BR", {
+              {selectedDate.toLocaleDateString("pt-BR", {
+                day: "2-digit",
                 month: "long",
                 year: "numeric",
               })}
             </p>
           </div>
 
-          <StatsChart />
+          <StatsChart
+            gastos={stats.gastosFixos.value}
+            vendas={stats.faturamento.value}
+            lucro={stats.faturamento.value - stats.gastosFixos.value}
+          />
         </div>
       </div>
 

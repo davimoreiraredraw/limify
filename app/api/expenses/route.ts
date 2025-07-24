@@ -79,6 +79,7 @@ export async function GET(req: NextRequest) {
       is_fixed: item.expense.isFixed,
       is_active: item.expense.isActive,
       is_archived: item.expense.isArchived,
+      is_deleted: item.expense.isDeleted,
       created_at: item.expense.createdAt,
       updated_at: item.expense.updatedAt,
       category: item.category
@@ -212,6 +213,127 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ expense }, { status: 201 });
   } catch (error) {
     console.error("Erro ao criar despesa:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
+  }
+}
+
+// Rota para mover para lixeira (soft delete)
+export async function PATCH(req: NextRequest) {
+  try {
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Usuário não autenticado" },
+        { status: 401 }
+      );
+    }
+
+    const body = await req.json();
+    const { id, action } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID da despesa não fornecido" },
+        { status: 400 }
+      );
+    }
+
+    // Atualizar a despesa no banco de dados
+    const updatedExpenses = await db
+      .update(ExpensesTable)
+      .set({
+        isDeleted: action === "trash",
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(ExpensesTable.id, id), eq(ExpensesTable.userId, session.user.id))
+      )
+      .returning();
+
+    if (!updatedExpenses || updatedExpenses.length === 0) {
+      return NextResponse.json(
+        { error: "Despesa não encontrada" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, expense: updatedExpenses[0] });
+  } catch (error) {
+    console.error("Erro ao atualizar despesa:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
+  }
+}
+
+// Rota para deletar permanentemente
+export async function DELETE(req: NextRequest) {
+  try {
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Usuário não autenticado" },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID da despesa não fornecido" },
+        { status: 400 }
+      );
+    }
+
+    await db.delete(ExpensesTable).where(
+      and(
+        eq(ExpensesTable.id, id),
+        eq(ExpensesTable.userId, session.user.id),
+        eq(ExpensesTable.isDeleted, true) // Só permite deletar permanentemente se estiver na lixeira
+      )
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Erro ao deletar despesa:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
