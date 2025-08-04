@@ -10,12 +10,14 @@ interface ClientBudgetDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   budget: Budget | null;
+  onMoveToTrash?: (budgetId: string) => void;
 }
 
 export default function ClientBudgetDetailModal({
   isOpen,
   onClose,
   budget,
+  onMoveToTrash,
 }: ClientBudgetDetailModalProps) {
   const [hiddenValues, setHiddenValues] = useState({
     cost: false,
@@ -199,9 +201,15 @@ export default function ClientBudgetDetailModal({
             <Button
               variant="outline"
               className="text-red-600 border-red-300 hover:bg-red-50 bg-white shadow-sm"
+              onClick={() => {
+                if (onMoveToTrash && budget) {
+                  onMoveToTrash(budget.id);
+                  onClose();
+                }
+              }}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Excluir
+              Mover para lixeira
             </Button>
             <Button className="bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
               <Pencil className="h-4 w-4 mr-2" />

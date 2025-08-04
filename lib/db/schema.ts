@@ -46,6 +46,13 @@ export const statusEnum = pgEnum("status", [
   "completed",
 ]);
 
+// Enum específico para status de orçamentos
+export const budgetStatusEnum = pgEnum("budget_status", [
+  "gerado",
+  "publicado",
+  "aceito",
+]);
+
 export const projects = pgTable("projects", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -108,6 +115,8 @@ export const budgets = pgTable("budgets", {
   value_type: text("value_type"), // individual ou unico
   total: decimal("total", { precision: 10, scale: 2 }).default("0"),
   user_id: text("user_id").notNull(),
+  status: budgetStatusEnum("status").default("gerado"),
+  is_deleted: boolean("is_deleted").default(false),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
   average_price_per_m2: decimal("average_price_per_m2", {

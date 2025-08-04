@@ -381,9 +381,9 @@ export default function DespesasPage() {
             </span>
             <div className="flex items-baseline gap-2">
               <div className="flex items-center gap-1 text-red-500">
-                <span className="text-lg">R$ -</span>
+                <span className="text-lg">R$</span>
                 <span className="text-2xl font-medium">
-                  {formatCurrency(totalFixas).replace("R$", "")}
+                  {formatCurrency(totalFixas).slice(3)}
                 </span>
               </div>
             </div>
@@ -401,9 +401,9 @@ export default function DespesasPage() {
             </span>
             <div className="flex items-baseline gap-2">
               <div className="flex items-center gap-1 text-red-500">
-                <span className="text-lg">R$ -</span>
+                <span className="text-lg">R$</span>
                 <span className="text-2xl font-medium">
-                  {formatCurrency(totalPontuais).replace("R$", "")}
+                  {formatCurrency(totalPontuais).slice(3)}
                 </span>
               </div>
             </div>
@@ -421,9 +421,9 @@ export default function DespesasPage() {
             </span>
             <div className="flex items-baseline gap-2">
               <div className="flex items-center gap-1 text-red-500">
-                <span className="text-lg">R$ -</span>
+                <span className="text-lg">R$</span>
                 <span className="text-2xl font-medium">
-                  {formatCurrency(custoHora).replace("R$", "")} h
+                  {formatCurrency(custoHora).slice(3)} h
                 </span>
               </div>
             </div>

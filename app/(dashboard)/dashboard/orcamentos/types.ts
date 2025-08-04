@@ -25,6 +25,9 @@ export interface Budget {
   created_at?: string;
   updated_at?: string;
   status:
+    | "gerado"
+    | "publicado"
+    | "aceito"
     | "Visualizado"
     | "Não gerado"
     | "Pendente"

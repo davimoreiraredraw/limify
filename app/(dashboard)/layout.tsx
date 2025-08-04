@@ -3,9 +3,16 @@
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { SidebarProvider, useSidebar } from "@/lib/hooks/use-sidebar";
+import { OnboardingProvider } from "@/contexts/onboarding-context";
+import { OnboardingModal } from "@/components/dashboard/onboarding-modal";
+import { OnboardingTestButton } from "@/components/dashboard/onboarding-test-button";
+import { useOnboardingDetection } from "@/lib/hooks/use-onboarding-detection";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed, isMobile } = useSidebar();
+
+  // Detectar navegação para páginas do onboarding
+  useOnboardingDetection();
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -25,6 +32,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           </p>
         </footer>
       </div>
+      <OnboardingModal />
+      {/* <OnboardingTestButton /> */}
     </div>
   );
 }
@@ -36,7 +45,9 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-      <DashboardContent>{children}</DashboardContent>
+      <OnboardingProvider>
+        <DashboardContent>{children}</DashboardContent>
+      </OnboardingProvider>
     </SidebarProvider>
   );
 }

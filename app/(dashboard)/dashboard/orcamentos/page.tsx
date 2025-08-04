@@ -11,6 +11,8 @@ import {
   Trash2Icon,
   UserIcon,
   UserPlusIcon,
+  CheckCircle2,
+  ArrowLeftIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,6 +31,12 @@ import { PlanLimitWarning } from "@/components/PlanLimitWarning";
 import Link from "next/link";
 import { pt } from "date-fns/locale";
 import { useSearchParams } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Interface para o orçamento que pode ter price ou total
 interface BudgetWithTotal extends Budget {
@@ -55,13 +63,24 @@ interface BudgetListItem {
   cost?: number;
   price?: number;
   profit?: number;
+  is_deleted?: boolean;
 }
+
+// Função para gerar erro de tipagem aleatório
 
 export default function OrcamentosPage() {
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [budgets, setBudgets] = useState<BudgetListItem[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const [isFiltersDropdownOpen, setIsFiltersDropdownOpen] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
+
+  // Estados de paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Estados para as colunas
   const [columns, setColumns] = useState<Record<string, Column>>({
@@ -130,6 +149,26 @@ export default function OrcamentosPage() {
   const [orcamentosCount, setOrcamentosCount] = useState(0);
   const { checkResourceLimit, isLoading: planLoading } = useUserPlan();
 
+  // Lógica de paginação
+  const totalItems = budgets.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = budgets.slice(startIndex, endIndex);
+
+  // Opções de itens por página
+  const itemsPerPageOptions = [5, 10, 25, 50];
+
+  // Handlers de paginação
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const handleItemsPerPageChange = (value: number) => {
+    setItemsPerPage(value);
+    setCurrentPage(1); // Volta para primeira página ao mudar itens por página
+  };
+
   useEffect(() => {
     const shouldCreateNew = searchParams.get("new") === "true";
     if (shouldCreateNew) {
@@ -141,7 +180,17 @@ export default function OrcamentosPage() {
     setIsLoading(true);
     try {
       console.log("Iniciando busca de orçamentos na página...");
-      const res = await fetch("/api/budgets");
+      const url = new URL("/api/budgets", window.location.origin);
+
+      if (statusFilter !== "todos") {
+        url.searchParams.set("status", statusFilter);
+      }
+
+      if (showTrash) {
+        url.searchParams.set("deleted", "true");
+      }
+
+      const res = await fetch(url.toString());
 
       if (!res.ok) {
         // Se a resposta não for OK (200-299), extrair o erro
@@ -201,6 +250,8 @@ export default function OrcamentosPage() {
             created_at: created_at,
             name: budget.name || "Sem nome",
             client_name: budget.client_name || "Sem cliente",
+            status: budget.status || "gerado",
+            is_deleted: budget.is_deleted || false,
           };
         })
         .filter(Boolean); // Remover itens nulos
@@ -208,8 +259,8 @@ export default function OrcamentosPage() {
       console.log("Orçamentos processados:", processedBudgets);
       setBudgets(processedBudgets);
 
-      // Distribuir os orçamentos nas colunas apropriadas
-      if (processedBudgets.length > 0) {
+      // Distribuir os orçamentos nas colunas apropriadas (apenas se não estiver na lixeira)
+      if (processedBudgets.length > 0 && !showTrash) {
         const updatedColumns = { ...columns };
 
         // Limpar os budgetIds existentes
@@ -263,6 +314,14 @@ export default function OrcamentosPage() {
   useEffect(() => {
     fetchBudgets();
   }, []);
+
+  useEffect(() => {
+    fetchBudgets();
+  }, [statusFilter]);
+
+  useEffect(() => {
+    fetchBudgets();
+  }, [showTrash]);
 
   useEffect(() => {
     if (budgets.length > 0) {
@@ -453,6 +512,118 @@ export default function OrcamentosPage() {
     }));
   };
 
+  // Função para atualizar o status de um orçamento
+  const updateBudgetStatus = async (budgetId: string, newStatus: string) => {
+    try {
+      const response = await fetch("/api/budgets", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          budgetId,
+          status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao atualizar status do orçamento");
+      }
+
+      toast.success("Status do orçamento atualizado com sucesso!");
+      fetchBudgets(); // Recarregar os orçamentos
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+      toast.error("Erro ao atualizar status do orçamento");
+    }
+  };
+
+  // Função para mover orçamento para lixeira
+  const moveToTrash = async (budgetId: string) => {
+    try {
+      const response = await fetch("/api/budgets", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          budgetId,
+          action: "move_to_trash",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao mover orçamento para lixeira");
+      }
+
+      toast.success("Orçamento movido para lixeira!");
+      fetchBudgets(); // Recarregar os orçamentos
+    } catch (error) {
+      console.error("Erro ao mover para lixeira:", error);
+      toast.error("Erro ao mover orçamento para lixeira");
+    }
+  };
+
+  // Função para restaurar orçamento da lixeira
+  const restoreFromTrash = async (budgetId: string) => {
+    try {
+      const response = await fetch("/api/budgets", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          budgetId,
+          action: "restore",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao restaurar orçamento");
+      }
+
+      toast.success("Orçamento restaurado com sucesso!");
+      fetchBudgets(); // Recarregar os orçamentos
+    } catch (error) {
+      console.error("Erro ao restaurar:", error);
+      toast.error("Erro ao restaurar orçamento");
+    }
+  };
+
+  // Função para excluir orçamento permanentemente
+  const deletePermanently = async (budgetId: string) => {
+    if (
+      !confirm(
+        "Tem certeza que deseja excluir permanentemente este orçamento? Esta ação não pode ser desfeita."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/budgets", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          budgetId,
+          action: "delete_permanently",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao excluir orçamento permanentemente");
+      }
+
+      toast.success("Orçamento excluído permanentemente!");
+      fetchBudgets(); // Recarregar os orçamentos
+    } catch (error) {
+      console.error("Erro ao excluir permanentemente:", error);
+      toast.error("Erro ao excluir orçamento permanentemente");
+    }
+  };
+
   // Função para converter BudgetListItem para Budget
   const convertToBudget = (budgetListItem: BudgetListItem): Budget => {
     // Calcular valores fictícios de custo e lucro baseados no total
@@ -578,9 +749,33 @@ export default function OrcamentosPage() {
                   </div>
                 </div>
               </div>
-              <Button className="h-8 w-8 -mt-1 -mr-1">
-                <MoreHorizontalIcon className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="h-8 w-8 -mt-1 -mr-1">
+                    <MoreHorizontalIcon className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => openBudgetDetailModal(budget)}
+                  >
+                    <EyeIcon className="h-4 w-4 mr-2" />
+                    Ver detalhes
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => updateBudgetStatus(budget.id, "publicado")}
+                  >
+                    <TagIcon className="h-4 w-4 mr-2" />
+                    Publicar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => updateBudgetStatus(budget.id, "aceito")}
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Marcar como aceito
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="mt-3 flex items-center text-xs text-gray-600">
@@ -597,6 +792,20 @@ export default function OrcamentosPage() {
                 <p className="text-gray-500">Valor</p>
                 <p className="font-medium">{formatCurrency(budget.total)}</p>
               </div>
+              <div>
+                <p className="text-gray-500">Status</p>
+                <p
+                  className={`font-medium ${
+                    budget.status === "aceito"
+                      ? "text-green-600"
+                      : budget.status === "publicado"
+                      ? "text-amber-600"
+                      : "text-blue-600"
+                  }`}
+                >
+                  {budget.status || "gerado"}
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -605,207 +814,307 @@ export default function OrcamentosPage() {
   }
 
   // Renderização da tabela para a visualização em lista
-  const renderTable = () => (
-    <div className="rounded-lg border bg-card shadow-sm">
-      <div className="relative overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="border-b text-xs uppercase">
-            <tr>
-              <th className="px-6 py-4 text-left font-medium w-[40px]">
-                <input type="checkbox" className="rounded" />
-              </th>
-              <th className="px-6 py-4 text-left font-medium">Projeto</th>
-              <th className="px-6 py-4 text-left font-medium">Cliente</th>
-              <th className="px-6 py-4 text-left font-medium">Data</th>
-              <th className="px-6 py-4 text-left font-medium">Custo</th>
-              <th className="px-6 py-4 text-left font-medium">Preço</th>
-              <th className="px-6 py-4 text-left font-medium">Lucro</th>
-              <th className="px-6 py-4 text-left font-medium">Analytics</th>
-              <th className="px-6 py-4 text-left font-medium">Status</th>
-              <th className="px-6 py-4 text-center font-medium">Ver</th>
-              <th className="px-6 py-4 text-center font-medium">Editar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={11} className="text-center py-10">
-                  Carregando orçamentos...
-                </td>
-              </tr>
-            ) : !Array.isArray(budgets) || budgets.length === 0 ? (
-              <div className="rounded-lg border bg-card shadow-sm">
-                <div className="flex flex-col items-center justify-center py-16">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                      <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                        <div className="w-4 h-4 bg-gray-500 rounded-full flex items-center justify-center relative">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-2 h-2 bg-white rounded-full"></div>
-                          </div>
-                          <div className="absolute -bottom-1 -right-1 w-1 h-1 bg-gray-400 rounded-full"></div>
-                          <div className="absolute -bottom-0.5 -right-0.5 w-0.5 h-0.5 bg-gray-400 rounded-full"></div>
-                        </div>
-                      </div>
+  const renderTable = () => {
+    // Se não há orçamentos e não está carregando, mostrar apenas a mensagem
+    if (!isLoading && (!Array.isArray(budgets) || budgets.length === 0)) {
+      return (
+        <div className="rounded-lg border bg-card shadow-sm">
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                  <div className="w-4 h-4 bg-gray-500 rounded-full flex items-center justify-center relative">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
                     </div>
-                    <div className="text-center">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        Crie um orçamento
-                      </h3>
-                      <p className="text-gray-600 mb-6">
-                        Nenhum orçamento para exibir, crie um novo agora para
-                        avançar no seu projeto
-                      </p>
-                      <div className="flex flex-col gap-3">
-                        <Button
-                          size="sm"
-                          className="bg-primary hover:bg-primary/90 text-white gap-2 px-4 py-2"
-                          onClick={() => setIsCreatingBudget(true)}
-                        >
-                          <PlusCircle className="h-4 w-4" />
-                          Gerar um orçamento
-                        </Button>
-                      </div>
-                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-1 h-1 bg-gray-400 rounded-full"></div>
+                    <div className="absolute -bottom-0.5 -right-0.5 w-0.5 h-0.5 bg-gray-400 rounded-full"></div>
                   </div>
                 </div>
               </div>
-            ) : (
-              budgets.map((budget) => {
-                // Convertendo para o tipo Budget para acessar as propriedades de status
-                const budgetData = convertToBudget(budget);
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {showTrash ? "Lixeira vazia" : "Crie um orçamento"}
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  {showTrash
+                    ? "Nenhum orçamento foi movido para a lixeira ainda."
+                    : "Nenhum orçamento para exibir, crie um novo agora para avançar no seu projeto"}
+                </p>
+                {!showTrash && (
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      size="sm"
+                      className="bg-primary hover:bg-primary/90 text-white gap-2 px-4 py-2"
+                      onClick={() => setIsCreatingBudget(true)}
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      Gerar um orçamento
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
-                return (
-                  <tr
-                    key={budget.id}
-                    className="border-b last:border-0 hover:bg-muted/30"
-                  >
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <input type="checkbox" className="rounded" />
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 font-medium">
-                      <div>
-                        <div>{budget.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {budgetData.company}
+    // Se há orçamentos, mostrar a tabela
+    return (
+      <div className="rounded-lg border bg-card shadow-sm">
+        <div className="relative overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="border-b text-xs uppercase">
+              <tr>
+                <th className="px-6 py-4 text-left font-medium w-[40px]">
+                  <input type="checkbox" className="rounded" />
+                </th>
+                <th className="px-6 py-4 text-left font-medium">Projeto</th>
+                <th className="px-6 py-4 text-left font-medium">Cliente</th>
+                <th className="px-6 py-4 text-left font-medium">Data</th>
+                <th className="px-6 py-4 text-left font-medium">Custo</th>
+                <th className="px-6 py-4 text-left font-medium">Preço</th>
+                <th className="px-6 py-4 text-left font-medium">Lucro</th>
+                <th className="px-6 py-4 text-left font-medium">Analytics</th>
+                <th className="px-6 py-4 text-left font-medium">Status</th>
+                <th className="px-6 py-4 text-center font-medium">Editar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={10} className="text-center py-10">
+                    Carregando orçamentos...
+                  </td>
+                </tr>
+              ) : (
+                currentItems.map((budget) => {
+                  // Convertendo para o tipo Budget para acessar as propriedades de status
+                  const budgetData = convertToBudget(budget);
+
+                  return (
+                    <tr
+                      key={budget.id}
+                      className="border-b last:border-0 hover:bg-muted/30 cursor-pointer"
+                      onClick={() => openBudgetDetailModal(budget)}
+                    >
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <input type="checkbox" className="rounded" />
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 font-medium">
+                        <div>
+                          <div>{budget.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {budgetData.company}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      {budget.client_name}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      {format(new Date(budget.created_at), "dd/MM/yyyy")}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-amber-500">
-                      {formatCurrency(budgetData.cost)}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      {formatCurrency(budgetData.price)}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-green-500">
-                      {formatCurrency(budgetData.profit)}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      {budgetData.status === "Visualizado" ||
-                      budgetData.status === "Completo" ? (
-                        <span className="flex items-center text-blue-600">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="mr-1"
-                          >
-                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                          </svg>
-                          Visualizado
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        {budget.client_name}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        {format(new Date(budget.created_at), "dd/MM/yyyy")}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-amber-500">
+                        {formatCurrency(budgetData.cost)}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        {formatCurrency(budgetData.price)}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-green-500">
+                        {formatCurrency(budgetData.profit)}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        {budgetData.status === "Visualizado" ||
+                        budgetData.status === "Completo" ? (
+                          <span className="flex items-center text-blue-600">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="mr-1"
+                            >
+                              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                              <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            Visualizado
+                          </span>
+                        ) : (
+                          <span className="flex items-center text-red-600">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="mr-1"
+                            >
+                              <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+                              <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+                              <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+                              <line x1="2" x2="22" y1="2" y2="22"></line>
+                            </svg>
+                            Não gerado
+                          </span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <span
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                            budgetData.status === "Completo" ||
+                            budgetData.status === "aceito"
+                              ? "bg-green-100 text-green-800"
+                              : budgetData.status === "Pendente" ||
+                                budgetData.status === "publicado"
+                              ? "bg-amber-100 text-amber-800"
+                              : budgetData.status === "Fechado"
+                              ? "bg-gray-100 text-gray-800"
+                              : budgetData.status === "Vencido" ||
+                                budgetData.status === "Não gerado"
+                              ? "bg-red-100 text-red-800"
+                              : budgetData.status === "Visualizado" ||
+                                budgetData.status === "gerado"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          {budgetData.status}
                         </span>
-                      ) : (
-                        <span className="flex items-center text-red-600">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="mr-1"
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-center">
+                        {showTrash ? (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                restoreFromTrash(budget.id);
+                              }}
+                              className="h-10 w-10 rounded-full bg-green-100 text-green-600 hover:bg-green-200 hover:text-green-700 p-0 flex items-center justify-center shadow-sm"
+                              title="Restaurar"
+                            >
+                              <ArrowLeftIcon className="h-5 w-5" />
+                            </Button>
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deletePermanently(budget.id);
+                              }}
+                              className="h-10 w-10 rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 p-0 flex items-center justify-center shadow-sm"
+                              title="Excluir permanentemente"
+                            >
+                              <Trash2Icon className="h-5 w-5" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Aqui você pode adicionar a lógica de edição
+                            }}
+                            className="h-10 w-10 rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-200 hover:text-indigo-700 p-0 flex items-center justify-center shadow-sm"
                           >
-                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
-                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
-                            <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
-                            <line x1="2" x2="22" y1="2" y2="22"></line>
-                          </svg>
-                          Não gerado
-                        </span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <span
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                          {
-                            Completo: "bg-green-100 text-green-800",
-                            Pendente: "bg-amber-100 text-amber-800",
-                            Fechado: "bg-gray-100 text-gray-800",
-                            Vencido: "bg-red-100 text-red-800",
-                            "Não gerado": "bg-red-100 text-red-800",
-                            Visualizado: "bg-blue-100 text-blue-800",
-                          }[budgetData.status] || "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        {budgetData.status}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-center">
-                      <Button
-                        onClick={() => openBudgetDetailModal(budget)}
-                        className="h-10 w-10 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 p-0 flex items-center justify-center shadow-sm"
-                      >
-                        <EyeIcon className="h-5 w-5" />
-                      </Button>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-center">
-                      <Button className="h-10 w-10 rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-200 hover:text-indigo-700 p-0 flex items-center justify-center shadow-sm">
-                        <Pencil className="h-5 w-5" />
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex items-center justify-between p-6 border-t">
-        <div className="text-sm text-muted-foreground">
-          Mostrando{" "}
-          <span className="font-medium">
-            {Array.isArray(budgets) ? budgets.length : 0}
-          </span>{" "}
-          orçamentos
+                            <Pencil className="h-5 w-5" />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
-        <div className="flex items-center space-x-8">
-          <Button className="h-12 w-12 rounded-full border border-gray-200 bg-background shadow-sm hover:bg-accent hover:text-accent-foreground p-0 flex items-center justify-center text-lg text-gray-900">
-            −
-          </Button>
-          <span className="text-lg font-medium">10</span>
-          <Button className="h-12 w-12 rounded-full border border-gray-200 bg-background shadow-sm hover:bg-accent hover:text-accent-foreground p-0 flex items-center justify-center text-lg text-gray-900">
-            +
-          </Button>
-        </div>
+        {/* Paginação */}
+        {currentItems.length > 0 && (
+          <div className="flex items-center justify-between p-6 border-t">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span>Mostrar</span>
+              <select
+                className="h-8 rounded-md border border-input bg-transparent px-3"
+                value={itemsPerPage}
+                onChange={(e) =>
+                  handleItemsPerPageChange(Number(e.target.value))
+                }
+              >
+                {itemsPerPageOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              <span>
+                Mostrando {startIndex + 1}-{Math.min(endIndex, totalItems)} de{" "}
+                {totalItems} itens
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </Button>
+                )
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Próximo
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
+
+  const calculateTotalRevenue = () => {
+    return budgets.reduce((sum, budget) => sum + budget.total, 0);
+  };
+
+  const calculateTotalCosts = () => {
+    return budgets.reduce((sum, budget) => {
+      // Calcular custo baseado no total se não existir
+      const cost = budget.cost || budget.total * 0.7;
+      return sum + cost;
+    }, 0);
+  };
+
+  const calculateTotalProfit = () => {
+    return budgets.reduce((sum, budget) => {
+      // Calcular lucro baseado no total se não existir
+      const cost = budget.cost || budget.total * 0.7;
+      const profit = budget.profit || budget.total - cost;
+      return sum + profit;
+    }, 0);
+  };
 
   return (
     <div className="container mx-auto py-8">
@@ -856,75 +1165,189 @@ export default function OrcamentosPage() {
       ) : (
         <>
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-semibold">Orçamentos</h1>
-            <Button className="gap-2 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-8 rounded-md px-3 text-xs text-gray-900">
-              <CalendarIcon className="h-4 w-4 text-gray-900" />
-              {new Date().toLocaleDateString("pt-BR", {
-                month: "long",
-                year: "numeric",
-              })}
-            </Button>
+            <div>
+              <h1 className="text-2xl font-semibold">Orçamentos</h1>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button className="gap-2 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-8 rounded-md px-3 text-xs text-gray-900">
+                <CalendarIcon className="h-4 w-4 text-gray-900" />
+                {new Date().toLocaleDateString("pt-BR", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </Button>
+
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-900 font-medium">View</span>
+                <Tabs
+                  value={view}
+                  onValueChange={(value) => setView(value as "grid" | "list")}
+                >
+                  <TabsList className="h-9 bg-transparent border border-gray-300 p-1 rounded-md">
+                    <TabsTrigger
+                      value="grid"
+                      className="h-7 w-7 p-0 data-[state=active]:bg-background data-[state=active]:shadow-sm text-gray-900"
+                    >
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 15 15"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="text-gray-900"
+                      >
+                        <rect
+                          x="1"
+                          y="1"
+                          width="5"
+                          height="5"
+                          rx="1"
+                          fill="currentColor"
+                        />
+                        <rect
+                          x="9"
+                          y="1"
+                          width="5"
+                          height="5"
+                          rx="1"
+                          fill="currentColor"
+                        />
+                        <rect
+                          x="1"
+                          y="9"
+                          width="5"
+                          height="5"
+                          rx="1"
+                          fill="currentColor"
+                        />
+                        <rect
+                          x="9"
+                          y="9"
+                          width="5"
+                          height="5"
+                          rx="1"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="list"
+                      className="h-7 w-7 p-0 data-[state=active]:bg-background data-[state=active]:shadow-sm text-gray-900"
+                    >
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 15 15"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="text-gray-900"
+                      >
+                        <rect
+                          x="1"
+                          y="1"
+                          width="13"
+                          height="2"
+                          rx="1"
+                          fill="currentColor"
+                        />
+                        <rect
+                          x="1"
+                          y="6"
+                          width="13"
+                          height="2"
+                          rx="1"
+                          fill="currentColor"
+                        />
+                        <rect
+                          x="1"
+                          y="11"
+                          width="13"
+                          height="2"
+                          rx="1"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="rounded-lg border bg-card p-6 shadow-sm">
-              <div className="flex flex-col gap-2">
-                <span className="text-sm text-muted-foreground">
-                  Faturamento
-                </span>
-                <div className="flex items-baseline gap-2">
-                  <div className="flex items-center gap-1">
-                    <span className="text-lg">R$</span>
-                    <span className="text-2xl font-medium">
-                      {formatCurrency(faturamento).slice(3)}
-                    </span>
+          {view === "list" && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="rounded-lg border bg-card p-6 shadow-sm">
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    Faturamento
+                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <div className="flex items-center gap-1">
+                      <span className="text-lg">R$</span>
+                      <span className="text-2xl font-medium">
+                        {formatCurrency(calculateTotalRevenue()).slice(3)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-emerald-500 text-sm mt-1">
+                    <span>{percentuais.faturamento >= 0 ? "↑" : "↓"}</span>
+                    <span>{Math.abs(percentuais.faturamento).toFixed(2)}%</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-emerald-500 text-sm mt-1">
-                  <span>{percentuais.faturamento >= 0 ? "↑" : "↓"}</span>
-                  <span>{Math.abs(percentuais.faturamento).toFixed(2)}%</span>
-                </div>
               </div>
-            </div>
 
-            <div className="rounded-lg border bg-card p-6 shadow-sm">
-              <div className="flex flex-col gap-2">
-                <span className="text-sm text-muted-foreground">
-                  Gastos fixos
-                </span>
-                <div className="flex items-baseline gap-2">
-                  <div className="flex items-center gap-1 text-red-500">
-                    <span className="text-lg">R$ -</span>
-                    <span className="text-2xl font-medium">
-                      {formatCurrency(gastosFixos).slice(3)}
-                    </span>
+              <div className="rounded-lg border bg-card p-6 shadow-sm">
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    Gastos fixos
+                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <div className="flex items-center gap-1 text-red-500">
+                      <span className="text-lg">R$</span>
+                      <span className="text-2xl font-medium">
+                        {formatCurrency(calculateTotalCosts()).slice(3)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-emerald-500 text-sm mt-1">
+                    <span>{percentuais.gastosFixos >= 0 ? "↑" : "↓"}</span>
+                    <span>{Math.abs(percentuais.gastosFixos).toFixed(2)}%</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-emerald-500 text-sm mt-1">
-                  <span>{percentuais.gastosFixos >= 0 ? "↑" : "↓"}</span>
-                  <span>{Math.abs(percentuais.gastosFixos).toFixed(2)}%</span>
-                </div>
               </div>
-            </div>
 
-            <div className="rounded-lg border bg-card p-6 shadow-sm">
-              <div className="flex flex-col gap-2">
-                <span className="text-sm text-muted-foreground">Lucro</span>
-                <div className="flex items-baseline gap-2">
-                  <div className="flex items-center gap-1">
-                    <span className="text-lg">R$</span>
-                    <span className="text-2xl font-medium">
-                      {formatCurrency(lucro).slice(3)}
-                    </span>
+              <div className="rounded-lg border bg-card p-6 shadow-sm">
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm text-muted-foreground">Lucro</span>
+                  <div className="flex items-baseline gap-2">
+                    <div
+                      className={`flex items-center gap-1 ${
+                        calculateTotalProfit() < 0 ? "text-red-500" : ""
+                      }`}
+                    >
+                      <span className="text-lg">R$</span>
+                      <span className="text-2xl font-medium">
+                        {calculateTotalProfit() < 0 ? "-" : ""}
+                        {formatCurrency(Math.abs(calculateTotalProfit())).slice(
+                          3
+                        )}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-1 text-emerald-500 text-sm mt-1">
-                  <span>{percentuais.lucro >= 0 ? "↑" : "↓"}</span>
-                  <span>{Math.abs(percentuais.lucro).toFixed(2)}%</span>
+                  <div
+                    className={`flex items-center gap-1 ${
+                      percentuais.lucro >= 0
+                        ? "text-emerald-500"
+                        : "text-red-500"
+                    } text-sm mt-1`}
+                  >
+                    <span>{percentuais.lucro >= 0 ? "↑" : "↓"}</span>
+                    <span>{Math.abs(percentuais.lucro).toFixed(2)}%</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="flex items-center justify-between mb-6">
             <div className="flex-1 relative max-w-md">
@@ -955,166 +1378,70 @@ export default function OrcamentosPage() {
             </div>
 
             <div className="flex items-center gap-3 ml-auto">
-              <Button className="flex items-center gap-2 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-4 text-xs text-gray-900">
-                <ChevronDownIcon className="h-4 w-4 text-gray-900" />
-                Status
-              </Button>
-
-              <Button className="flex items-center gap-2 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-4 text-xs text-gray-900">
-                <ChevronDownIcon className="h-4 w-4 text-gray-900" />
-                Filtros
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-3 ml-6">
-              <span className="text-sm text-gray-900 font-medium">View</span>
-              <Tabs
-                value={view}
-                onValueChange={(value) => setView(value as "grid" | "list")}
-              >
-                <TabsList className="h-9 bg-transparent border border-gray-300 p-1 rounded-md">
-                  <TabsTrigger
-                    value="grid"
-                    className="h-7 w-7 p-0 data-[state=active]:bg-background data-[state=active]:shadow-sm text-gray-900"
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="flex items-center gap-2 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-4 text-xs text-gray-900">
+                    <ChevronDownIcon className="h-4 w-4 text-gray-900" />
+                    {statusFilter === "todos" ? "Status" : statusFilter}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setStatusFilter("todos")}>
+                    Todos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("gerado")}>
+                    Gerado
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setStatusFilter("publicado")}
                   >
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 15 15"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="text-gray-900"
-                    >
-                      <rect
-                        x="1"
-                        y="1"
-                        width="5"
-                        height="5"
-                        rx="1"
-                        fill="currentColor"
-                      />
-                      <rect
-                        x="9"
-                        y="1"
-                        width="5"
-                        height="5"
-                        rx="1"
-                        fill="currentColor"
-                      />
-                      <rect
-                        x="1"
-                        y="9"
-                        width="5"
-                        height="5"
-                        rx="1"
-                        fill="currentColor"
-                      />
-                      <rect
-                        x="9"
-                        y="9"
-                        width="5"
-                        height="5"
-                        rx="1"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="list"
-                    className="h-7 w-7 p-0 data-[state=active]:bg-background data-[state=active]:shadow-sm text-gray-900"
-                  >
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 15 15"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="text-gray-900"
-                    >
-                      <rect
-                        x="1"
-                        y="1"
-                        width="13"
-                        height="2"
-                        rx="1"
-                        fill="currentColor"
-                      />
-                      <rect
-                        x="1"
-                        y="6"
-                        width="13"
-                        height="2"
-                        rx="1"
-                        fill="currentColor"
-                      />
-                      <rect
-                        x="1"
-                        y="11"
-                        width="13"
-                        height="2"
-                        rx="1"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </div>
+                    Publicado
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("aceito")}>
+                    Aceito
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="flex items-center gap-2 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-4 text-xs text-gray-900">
+                    <ChevronDownIcon className="h-4 w-4 text-gray-900" />
+                    Filtros
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>Ordenar por data</DropdownMenuItem>
+                  <DropdownMenuItem>Ordenar por valor</DropdownMenuItem>
+                  <DropdownMenuItem>Ordenar por cliente</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button
-                className="text-xs px-4 py-2 h-9 gap-2 mr-2 text-white bg-primary"
+                className="flex items-center gap-2 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-4 text-xs text-gray-900"
                 onClick={() => setIsClientModalOpen(true)}
               >
-                <UserIcon className="h-4 w-4 text-white" />
+                <UserIcon className="h-4 w-4" />
                 Clientes
               </Button>
 
-              <Button className="text-xs px-4 py-2 h-9 gap-2 mr-2 text-white bg-primary">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 15 15"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="text-white"
-                >
-                  <path
-                    d="M4 7H11M4 11H11"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                Lixeira
-              </Button>
-
-              <Button className="text-xs px-4 py-2 h-9 gap-2 text-white bg-primary">
-                <TagIcon className="h-4 w-4 text-white" />
-                Arquivados
-              </Button>
-            </div>
-
-            <div className="flex mt-0 justify-center">
               <Button
-                onClick={() => setIsCreatingBudget(true)}
-                disabled={
-                  checkResourceLimit("orçamentos", orcamentosCount).isLimit
-                }
-                className="gap-2 py-2 px-6 bg-primary text-white hover:bg-primary/90"
+                className={`flex items-center gap-2 border h-9 rounded-md px-4 text-xs ${
+                  showTrash
+                    ? "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                    : "border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground text-gray-900"
+                }`}
+                onClick={() => setShowTrash(!showTrash)}
               >
-                {checkResourceLimit("orçamentos", orcamentosCount).isLimit
-                  ? "Limite de orçamentos atingido"
-                  : "Criar Orçamento"}
+                <Trash2Icon className="h-4 w-4" />
+                Lixeira
               </Button>
             </div>
           </div>
 
           {view === "list" ? (
             renderTable()
-          ) : budgets.length === 0 && !isLoading ? (
+          ) : !Array.isArray(budgets) || budgets.length === 0 ? (
             <div className="rounded-lg border bg-card shadow-sm">
               <div className="flex flex-col items-center justify-center py-16">
                 <div className="flex flex-col items-center gap-4">
@@ -1131,22 +1458,25 @@ export default function OrcamentosPage() {
                   </div>
                   <div className="text-center">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      Crie um orçamento
+                      {showTrash ? "Lixeira vazia" : "Crie um orçamento"}
                     </h3>
                     <p className="text-gray-600 mb-6">
-                      Nenhum orçamento para exibir, crie um novo agora para
-                      avançar no seu projeto
+                      {showTrash
+                        ? "Nenhum orçamento foi movido para a lixeira ainda."
+                        : "Nenhum orçamento para exibir, crie um novo agora para avançar no seu projeto"}
                     </p>
-                    <div className="flex flex-col gap-3">
-                      <Button
-                        size="sm"
-                        className="bg-primary hover:bg-primary/90 text-white gap-2 px-4 py-2"
-                        onClick={() => setIsCreatingBudget(true)}
-                      >
-                        <PlusCircle className="h-4 w-4" />
-                        Gerar um orçamento
-                      </Button>
-                    </div>
+                    {!showTrash && (
+                      <div className="flex flex-col gap-3">
+                        <Button
+                          size="sm"
+                          className="bg-primary hover:bg-primary/90 text-white gap-2 px-4 py-2"
+                          onClick={() => setIsCreatingBudget(true)}
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          Gerar um orçamento
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1156,6 +1486,7 @@ export default function OrcamentosPage() {
               columns={columns}
               setColumns={setColumns}
               columnOrder={columnOrder}
+              setColumnOrder={setColumnOrder}
               budgets={budgets.map((b) => {
                 // Converter para Budget mantendo as propriedades originais
                 const budgetForKanban: BudgetWithTotal = {
@@ -1237,6 +1568,7 @@ export default function OrcamentosPage() {
         isOpen={isBudgetDetailModalOpen}
         onClose={() => setIsBudgetDetailModalOpen(false)}
         budget={selectedBudget}
+        onMoveToTrash={moveToTrash}
       />
     </div>
   );

@@ -37,9 +37,14 @@ async function getUserId() {
   return session.user.id;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     console.log("Iniciando busca de orçamentos...");
+
+    // Obter parâmetros da query
+    const { searchParams } = new URL(request.url);
+    const statusFilter = searchParams.get("status");
+    const showDeleted = searchParams.get("deleted") === "true";
 
     // Obter o ID do usuário logado
     const userId = await getUserId();
@@ -66,16 +71,30 @@ export async function GET() {
       );
     }
 
-    // Buscar todos os orçamentos do usuário logado
-    const result = await db
+    // Construir a query base
+    let query = db
       .select({
         budget: budgets,
         client_name: clientsTable.name,
       })
       .from(budgets)
       .leftJoin(clientsTable, eq(budgets.client_id, clientsTable.id))
-      .where(eq(budgets.user_id, userId))
-      .orderBy(desc(budgets.created_at));
+      .where(eq(budgets.user_id, userId));
+
+    // Aplicar filtro de lixeira
+    if (showDeleted) {
+      query = query.where(eq(budgets.is_deleted, true));
+    } else {
+      query = query.where(eq(budgets.is_deleted, false));
+    }
+
+    // Aplicar filtro de status se fornecido
+    if (statusFilter && statusFilter !== "todos") {
+      query = query.where(eq(budgets.status, statusFilter as any));
+    }
+
+    // Executar a query com ordenação
+    const result = await query.orderBy(desc(budgets.created_at));
 
     // Formatar a resposta
     const formattedBudgets = result.map((item) => ({
@@ -87,6 +106,8 @@ export async function GET() {
       budget_type: item.budget.budget_type,
       value_type: item.budget.value_type,
       total: item.budget.total,
+      status: item.budget.status,
+      is_deleted: item.budget.is_deleted,
       user_id: item.budget.user_id,
       created_at: item.budget.created_at,
       updated_at: item.budget.updated_at,
@@ -182,6 +203,66 @@ export async function POST(req: NextRequest) {
     console.error("Erro ao salvar orçamento:", error);
     return NextResponse.json(
       { error: "Erro ao salvar orçamento" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    // Obter o ID do usuário logado
+    const userId = await getUserId();
+
+    const body = await req.json();
+    const { budgetId, status, action } = body;
+
+    if (!budgetId) {
+      return NextResponse.json(
+        { error: "budgetId é obrigatório" },
+        { status: 400 }
+      );
+    }
+
+    // Verificar se o orçamento pertence ao usuário
+    const existingBudget = await db
+      .select()
+      .from(budgets)
+      .where(and(eq(budgets.id, budgetId), eq(budgets.user_id, userId)))
+      .limit(1);
+
+    if (existingBudget.length === 0) {
+      return NextResponse.json(
+        { error: "Orçamento não encontrado" },
+        { status: 404 }
+      );
+    }
+
+    let updateData: any = { updated_at: new Date() };
+
+    // Determinar a ação a ser executada
+    if (action === "move_to_trash") {
+      updateData.is_deleted = true;
+    } else if (action === "restore") {
+      updateData.is_deleted = false;
+    } else if (action === "delete_permanently") {
+      // Excluir permanentemente
+      await db.delete(budgets).where(eq(budgets.id, budgetId));
+      return NextResponse.json({ success: true });
+    } else if (status) {
+      // Atualizar status
+      updateData.status = status;
+    } else {
+      return NextResponse.json({ error: "Ação inválida" }, { status: 400 });
+    }
+
+    // Atualizar o orçamento
+    await db.update(budgets).set(updateData).where(eq(budgets.id, budgetId));
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Erro ao atualizar orçamento:", error);
+    return NextResponse.json(
+      { error: "Erro ao atualizar orçamento" },
       { status: 500 }
     );
   }

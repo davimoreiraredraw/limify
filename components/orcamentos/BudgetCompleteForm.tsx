@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { UserIcon, MoreVertical } from "lucide-react";
+import { UserIcon, MoreVertical, Sparkles } from "lucide-react";
 import { Dispatch, SetStateAction, useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useClients } from "@/lib/hooks/useClients";
@@ -498,6 +498,104 @@ export default function BudgetCompleteForm({
   const [adjustmentValueType, setAdjustmentValueType] = useState<
     "percentage" | "value"
   >("percentage");
+  const [opcoesAjusteValor, setOpcoesAjusteValor] = useState<string[]>([]);
+
+  // Estados para o chat LimIA
+  const [showLimIAChat, setShowLimIAChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState<
+    Array<{
+      id: string;
+      type: "ai" | "user";
+      content: string;
+      timestamp: Date;
+    }>
+  >([]);
+  const [currentInput, setCurrentInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [chatStep, setChatStep] = useState(0);
+  const [collectedData, setCollectedData] = useState<{
+    projectName: string;
+    projectDescription: string;
+    projectType: string;
+    totalArea: number;
+    complexity: string;
+    deliveryTime: number;
+    budgetRange: string;
+    additionalServices: string[];
+    [key: string]: string | string[] | number;
+  }>({
+    projectName: "",
+    projectDescription: "",
+    projectType: "",
+    totalArea: 0,
+    complexity: "",
+    deliveryTime: 0,
+    budgetRange: "",
+    additionalServices: [],
+  });
+
+  // Estados para o modal de comparação
+  const [showComparisonModal, setShowComparisonModal] = useState(false);
+  const [aiGeneratedData, setAiGeneratedData] = useState<any>(null);
+
+  // Ref para o container de mensagens
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Função para fazer scroll automático
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Configuração das perguntas do chat para orçamento completo
+  const chatQuestions = [
+    {
+      id: "projectName",
+      question: "Qual é o nome do seu projeto?",
+      field: "projectName" as keyof typeof collectedData,
+    },
+    {
+      id: "projectDescription",
+      question: "Descreva brevemente o projeto:",
+      field: "projectDescription" as keyof typeof collectedData,
+    },
+    {
+      id: "projectType",
+      question:
+        "Que tipo de projeto é? (ex: residencial, comercial, institucional)",
+      field: "projectType" as keyof typeof collectedData,
+    },
+    {
+      id: "totalArea",
+      question: "Qual é a área total aproximada em m²?",
+      field: "totalArea" as keyof typeof collectedData,
+      isNumber: true,
+    },
+    {
+      id: "complexity",
+      question: "Qual é o nível de complexidade? (baixa, média, alta)",
+      field: "complexity" as keyof typeof collectedData,
+      options: ["baixa", "média", "alta"],
+    },
+    {
+      id: "deliveryTime",
+      question: "Qual é o prazo de entrega desejado em dias?",
+      field: "deliveryTime" as keyof typeof collectedData,
+      isNumber: true,
+    },
+    {
+      id: "budgetRange",
+      question: "Qual é a faixa de orçamento esperada? (baixa, média, alta)",
+      field: "budgetRange" as keyof typeof collectedData,
+      options: ["baixa", "média", "alta"],
+    },
+    {
+      id: "additionalServices",
+      question:
+        "Quais serviços adicionais você precisa? (ex: acompanhamento de obra, renderização, maquete)",
+      field: "additionalServices" as keyof typeof collectedData,
+      isArray: true,
+    },
+  ];
 
   const calculateWetAreaAdditional = () => {
     if (disableWetArea || !wetRooms || !dryRooms || !wetAreaPercentage)
@@ -884,20 +982,22 @@ export default function BudgetCompleteForm({
                   onClick={() => setBudgetModel("previous")}
                 >
                   <div className="flex items-center gap-3">
-                    <div
-                      className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                        budgetModel === "previous" ? "border-indigo-600" : ""
-                      }`}
-                    >
-                      {budgetModel === "previous" && (
-                        <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Orçamento anterior</h4>
-                      <p className="text-sm text-gray-500">
-                        Utilize templates de orçamentos anteriores
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                          budgetModel === "previous" ? "border-indigo-600" : ""
+                        }`}
+                      >
+                        {budgetModel === "previous" && (
+                          <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Orçamento anterior</h4>
+                        <p className="text-sm text-gray-500">
+                          Utilize templates de orçamentos anteriores
+                        </p>
+                      </div>
                     </div>
                   </div>
                   {budgetModel === "previous" && (
@@ -1866,15 +1966,31 @@ export default function BudgetCompleteForm({
               </h2>
 
               <div className="grid grid-cols-2 gap-8">
-                <div className="bg-indigo-50 rounded-xl p-6">
+                <div
+                  className={`rounded-xl p-6 cursor-pointer ${
+                    opcoesAjusteValor.includes("increase")
+                      ? "bg-indigo-50 border-2 border-indigo-600"
+                      : "bg-white border border-indigo-100"
+                  }`}
+                  onClick={() => {
+                    const newOpcoes = opcoesAjusteValor.includes("increase")
+                      ? opcoesAjusteValor.filter((op) => op !== "increase")
+                      : [...opcoesAjusteValor, "increase"];
+                    setOpcoesAjusteValor(newOpcoes);
+                  }}
+                >
                   <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="adjustmentType"
-                      className="w-5 h-5 text-indigo-600 border-indigo-600"
-                      checked={adjustmentType === "increase"}
-                      onChange={() => setAdjustmentType("increase")}
-                    />
+                    <div
+                      className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                        opcoesAjusteValor.includes("increase")
+                          ? "border-indigo-600"
+                          : ""
+                      }`}
+                    >
+                      {opcoesAjusteValor.includes("increase") && (
+                        <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
+                      )}
+                    </div>
                     <div>
                       <h3 className="font-medium">Acrescentar valor</h3>
                       <p className="text-sm text-gray-500">
@@ -1887,7 +2003,17 @@ export default function BudgetCompleteForm({
                       type="text"
                       className="w-full border rounded-lg px-3 py-2 pl-8"
                       placeholder="100 Reais"
-                      disabled={adjustmentType !== "increase"}
+                      disabled={!opcoesAjusteValor.includes("increase")}
+                      value={adjustmentValue || ""}
+                      onChange={(e) => {
+                        if (!opcoesAjusteValor.includes("increase")) {
+                          setOpcoesAjusteValor([
+                            ...opcoesAjusteValor,
+                            "increase",
+                          ]);
+                        }
+                        setAdjustmentValue(Number(e.target.value) || 0);
+                      }}
                     />
                     <span className="absolute left-3 top-1/2 -translate-y-1/2">
                       $
@@ -1895,15 +2021,31 @@ export default function BudgetCompleteForm({
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl p-6 border border-indigo-100">
+                <div
+                  className={`rounded-xl p-6 cursor-pointer ${
+                    opcoesAjusteValor.includes("discount")
+                      ? "bg-indigo-50 border-2 border-indigo-600"
+                      : "bg-white border border-indigo-100"
+                  }`}
+                  onClick={() => {
+                    const newOpcoes = opcoesAjusteValor.includes("discount")
+                      ? opcoesAjusteValor.filter((op) => op !== "discount")
+                      : [...opcoesAjusteValor, "discount"];
+                    setOpcoesAjusteValor(newOpcoes);
+                  }}
+                >
                   <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="adjustmentType"
-                      className="w-5 h-5 text-indigo-600 border-indigo-600"
-                      checked={adjustmentType === "discount"}
-                      onChange={() => setAdjustmentType("discount")}
-                    />
+                    <div
+                      className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                        opcoesAjusteValor.includes("discount")
+                          ? "border-indigo-600"
+                          : ""
+                      }`}
+                    >
+                      {opcoesAjusteValor.includes("discount") && (
+                        <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
+                      )}
+                    </div>
                     <div>
                       <h3 className="font-medium">Dar desconto</h3>
                       <p className="text-sm text-gray-500">
@@ -1919,7 +2061,16 @@ export default function BudgetCompleteForm({
                             ? "bg-indigo-600 text-white"
                             : "border"
                         }`}
-                        onClick={() => setDiscountType("value")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!opcoesAjusteValor.includes("discount")) {
+                            setOpcoesAjusteValor([
+                              ...opcoesAjusteValor,
+                              "discount",
+                            ]);
+                          }
+                          setDiscountType("value");
+                        }}
                       >
                         $
                       </button>
@@ -1929,7 +2080,16 @@ export default function BudgetCompleteForm({
                             ? "bg-indigo-600 text-white"
                             : "border"
                         }`}
-                        onClick={() => setDiscountType("percentage")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!opcoesAjusteValor.includes("discount")) {
+                            setOpcoesAjusteValor([
+                              ...opcoesAjusteValor,
+                              "discount",
+                            ]);
+                          }
+                          setDiscountType("percentage");
+                        }}
                       >
                         %
                       </button>
@@ -1938,7 +2098,17 @@ export default function BudgetCompleteForm({
                       type="text"
                       className="flex-1 border rounded-lg px-3 py-2"
                       placeholder="10%"
-                      disabled={adjustmentType !== "discount"}
+                      disabled={!opcoesAjusteValor.includes("discount")}
+                      value={adjustmentValue || ""}
+                      onChange={(e) => {
+                        if (!opcoesAjusteValor.includes("discount")) {
+                          setOpcoesAjusteValor([
+                            ...opcoesAjusteValor,
+                            "discount",
+                          ]);
+                        }
+                        setAdjustmentValue(Number(e.target.value) || 0);
+                      }}
                     />
                   </div>
                 </div>
@@ -2015,9 +2185,15 @@ export default function BudgetCompleteForm({
         references: [],
         profit_margin: profitConfig === "final" ? 0 : 0,
         final_adjustments: {
-          type: adjustmentType,
-          value: adjustmentType === "increase" ? 0 : 0,
-          valueType: adjustmentType === "discount" ? "percentage" : null,
+          type: opcoesAjusteValor.includes("increase")
+            ? "increase"
+            : opcoesAjusteValor.includes("discount")
+            ? "discount"
+            : null,
+          value: adjustmentValue,
+          valueType: opcoesAjusteValor.includes("discount")
+            ? discountType
+            : null,
         },
       };
 
@@ -2071,13 +2247,14 @@ export default function BudgetCompleteForm({
     }
 
     // Aplicar ajustes finais
-    if (adjustmentType === "increase") {
+    if (opcoesAjusteValor.includes("increase")) {
       if (adjustmentValueType === "percentage") {
         total += total * (adjustmentValue / 100);
       } else {
         total += adjustmentValue;
       }
-    } else {
+    }
+    if (opcoesAjusteValor.includes("discount")) {
       if (adjustmentValueType === "percentage") {
         total -= total * (adjustmentValue / 100);
       } else {
@@ -2086,6 +2263,254 @@ export default function BudgetCompleteForm({
     }
 
     return total;
+  };
+
+  // Função para inicializar o chat LimIA
+  const startLimIAChat = () => {
+    setShowLimIAChat(true);
+    setChatMessages([
+      {
+        id: "1",
+        type: "ai",
+        content:
+          "Olá! Sou o LimIA, seu assistente para orçamentos completos. Vou te ajudar a criar um orçamento detalhado por fases. Primeiro, me diga qual é o nome do seu projeto?",
+        timestamp: new Date(),
+      },
+    ]);
+    setChatStep(0);
+    setCollectedData({
+      projectName: "",
+      projectDescription: "",
+      projectType: "",
+      totalArea: 0,
+      complexity: "",
+      deliveryTime: 0,
+      budgetRange: "",
+      additionalServices: [],
+    });
+  };
+
+  // Função para enviar mensagem no chat
+  const sendChatMessage = async () => {
+    if (!currentInput.trim()) return;
+
+    const userMessage = {
+      id: Date.now().toString(),
+      type: "user" as const,
+      content: currentInput,
+      timestamp: new Date(),
+    };
+
+    setChatMessages((prev) => [...prev, userMessage]);
+    setCurrentInput("");
+    setIsTyping(true);
+
+    // Scroll para baixo após enviar mensagem
+    setTimeout(scrollToBottom, 100);
+
+    // Processar a resposta do usuário
+    const currentQuestion = chatQuestions[chatStep];
+    if (currentQuestion) {
+      let processedValue: any = currentInput;
+
+      // Processar arrays (como additionalServices)
+      if (currentQuestion.isArray) {
+        processedValue = currentInput.split(",").map((item) => item.trim());
+      }
+
+      // Processar números
+      if (currentQuestion.isNumber) {
+        processedValue = parseFloat(currentInput) || 0;
+      }
+
+      // Atualizar dados coletados
+      setCollectedData((prev) => ({
+        ...prev,
+        [currentQuestion.field]: processedValue,
+      }));
+    }
+
+    // Simular delay de digitação da IA
+    setTimeout(async () => {
+      const nextStep = chatStep + 1;
+
+      if (nextStep < chatQuestions.length) {
+        // Próxima pergunta
+        const nextQuestion = chatQuestions[nextStep];
+        const aiMessage = {
+          id: (Date.now() + 1).toString(),
+          type: "ai" as const,
+          content: nextQuestion.question,
+          timestamp: new Date(),
+        };
+
+        setChatMessages((prev) => [...prev, aiMessage]);
+        setChatStep(nextStep);
+
+        // Scroll para baixo após nova mensagem da IA
+        setTimeout(scrollToBottom, 100);
+      } else {
+        // Finalizar chat e gerar orçamento
+        const aiMessage = {
+          id: (Date.now() + 1).toString(),
+          content:
+            "Perfeito! Agora vou gerar um orçamento completo com fases detalhadas baseado nas suas informações. Isso pode levar alguns segundos...",
+          type: "ai" as const,
+          timestamp: new Date(),
+        };
+
+        setChatMessages((prev) => [...prev, aiMessage]);
+
+        // Scroll para baixo após mensagem de processamento
+        setTimeout(scrollToBottom, 100);
+
+        // Gerar orçamento com os dados coletados
+        await generateBudgetFromChat();
+      }
+
+      setIsTyping(false);
+    }, 1000);
+  };
+
+  // Função para extrair valores da resposta da IA
+  const extractAIValues = (sugestao: string) => {
+    const values = {
+      suggestedBaseValue: 85,
+      suggestedPhases: [],
+      recommendedMargin: 20,
+      analysis: sugestao,
+    };
+
+    // Extrair valor base sugerido
+    const baseValueMatch = sugestao.match(/R\$ (\d+(?:\.\d+)?)/g);
+    if (baseValueMatch && baseValueMatch.length > 0) {
+      const lastValue = baseValueMatch[baseValueMatch.length - 1];
+      values.suggestedBaseValue = parseInt(
+        lastValue.replace("R$ ", "").replace(".", "")
+      );
+    }
+
+    // Extrair margem recomendada
+    const marginMatch = sugestao.match(/margem de (\d+)%/);
+    if (marginMatch) {
+      values.recommendedMargin = parseInt(marginMatch[1]);
+    }
+
+    return values;
+  };
+
+  // Função para gerar orçamento a partir do chat
+  const generateBudgetFromChat = async () => {
+    try {
+      // Preparar dados para o endpoint
+      const payload = {
+        tipoProjeto: "completo",
+        tipoOrcamento: "complete",
+        area: collectedData.totalArea,
+        complexidade: collectedData.complexity,
+        prazoEntrega: collectedData.deliveryTime,
+        faixaOrcamento: collectedData.budgetRange,
+        servicosAdicionais: collectedData.additionalServices,
+        userId: "user123", // TODO: Usar ID real do usuário
+      };
+
+      const response = await fetch(
+        "http://localhost:3003/api/openai/sugestao-orcamento",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Extrair valores da resposta da IA
+        const aiValues = extractAIValues(data.sugestao || data.message || "");
+
+        // Adicionar mensagem de sucesso
+        const successMessage = {
+          id: (Date.now() + 2).toString(),
+          type: "ai" as const,
+          content:
+            "Orçamento completo gerado com sucesso! Vou mostrar uma comparação entre suas informações e as sugestões da IA.",
+          timestamp: new Date(),
+        };
+
+        setChatMessages((prev) => [...prev, successMessage]);
+
+        // Scroll para baixo após resultado
+        setTimeout(scrollToBottom, 100);
+
+        // Armazenar dados da IA e mostrar modal de comparação
+        setAiGeneratedData({
+          ...data,
+          ...aiValues,
+        });
+        setShowComparisonModal(true);
+      } else {
+        throw new Error("Erro ao gerar orçamento");
+      }
+    } catch (error) {
+      console.error("Erro ao gerar orçamento:", error);
+
+      const errorMessage = {
+        id: (Date.now() + 2).toString(),
+        type: "ai" as const,
+        content:
+          "Desculpe, ocorreu um erro ao gerar o orçamento. Tente novamente.",
+        timestamp: new Date(),
+      };
+
+      setChatMessages((prev) => [...prev, errorMessage]);
+
+      // Scroll para baixo após erro
+      setTimeout(scrollToBottom, 100);
+    }
+  };
+
+  // Função para aplicar dados da IA
+  const applyAIData = () => {
+    if (aiGeneratedData) {
+      // Aplicar os dados da IA ao formulário
+      setProjectName(collectedData.projectName);
+      setProjectDescription(collectedData.projectDescription);
+
+      // Aplicar valor base sugerido
+      if (aiGeneratedData.suggestedBaseValue) {
+        setBudgetPhases((prev) =>
+          prev.map((phase) => ({
+            ...phase,
+            baseValue: aiGeneratedData.suggestedBaseValue,
+          }))
+        );
+      }
+
+      setShowComparisonModal(false);
+      setShowLimIAChat(false);
+      toast.success("Valores da IA aplicados ao formulário!");
+    }
+  };
+
+  // Função para manter dados originais
+  const keepOriginalData = () => {
+    // Aplicar os dados coletados originalmente
+    setProjectName(collectedData.projectName);
+    setProjectDescription(collectedData.projectDescription);
+    setShowComparisonModal(false);
+    setShowLimIAChat(false);
+    toast.success("Dados do chat aplicados ao formulário!");
+  };
+
+  // Função para lidar com Enter no chat
+  const handleChatKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
   };
 
   return (
@@ -2195,6 +2620,291 @@ export default function BudgetCompleteForm({
           onClose={() => setShowPhaseModal(false)}
           onSubmit={handleAddPhase}
         />
+      )}
+
+      {/* FAB do LimIA */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <div className="relative">
+          {/* Botão principal do FAB */}
+          <button
+            onClick={startLimIAChat}
+            className="w-14 h-14 bg-white border-2 border-[#c084fc] rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+          >
+            <Sparkles className="w-4 h-4 text-[#c084fc]" />
+          </button>
+        </div>
+      </div>
+
+      {/* Chat LimIA */}
+      {showLimIAChat && (
+        <div className="fixed inset-0 z-50 flex items-end justify-end p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md h-[600px] flex flex-col">
+            {/* Header do chat */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">LimIA</h3>
+                  <p className="text-xs text-gray-500">
+                    Assistente de Orçamentos Completos
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowLimIAChat(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M18 6L6 18M6 6l12 12"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Área de mensagens */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {chatMessages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.type === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                      message.type === "user"
+                        ? "bg-purple-600 text-white"
+                        : "bg-gray-100 text-gray-900"
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">
+                      {message.content}
+                    </p>
+                    <p className="text-xs opacity-70 mt-1">
+                      {message.timestamp.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {/* Indicador de digitação */}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-100 rounded-2xl px-4 py-3">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Elemento para scroll automático */}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Área de input */}
+            <div className="p-4 border-t border-gray-200">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={currentInput}
+                  onChange={(e) => setCurrentInput(e.target.value)}
+                  onKeyPress={handleChatKeyPress}
+                  placeholder="Digite sua resposta..."
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  disabled={isTyping}
+                />
+                <button
+                  onClick={sendChatMessage}
+                  disabled={!currentInput.trim() || isTyping}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Comparação */}
+      {showComparisonModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={() => setShowComparisonModal(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Comparação de Valores
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Compare suas informações com as sugestões da IA
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowComparisonModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M18 6L6 18M6 6l12 12"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="space-y-6">
+                {/* Comparação de valores */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Suas informações */}
+                  <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                    <h3 className="font-semibold text-blue-900 mb-4 flex items-center gap-2">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <path
+                          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      Suas Informações
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-sm text-blue-600">
+                          Área total:
+                        </span>
+                        <div className="text-lg font-semibold text-blue-700">
+                          {collectedData.totalArea} m²
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-blue-600">
+                          Complexidade:
+                        </span>
+                        <div className="text-lg font-semibold text-blue-700">
+                          {collectedData.complexity}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-blue-600">Prazo:</span>
+                        <div className="text-lg font-semibold text-blue-700">
+                          {collectedData.deliveryTime} dias
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sugestões da IA */}
+                  <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
+                    <h3 className="font-semibold text-purple-900 mb-4 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Sugestões da IA
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-sm text-purple-600">
+                          Valor base sugerido:
+                        </span>
+                        <div className="text-2xl font-bold text-purple-700">
+                          R$ {aiGeneratedData?.suggestedBaseValue || "N/A"}/h
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-purple-600">
+                          Margem recomendada:
+                        </span>
+                        <div className="text-lg font-semibold text-purple-700">
+                          {aiGeneratedData?.recommendedMargin || "N/A"}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Análise da IA */}
+                {aiGeneratedData?.analysis && (
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
+                    <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <Sparkles className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-2">
+                          Análise da IA
+                        </h3>
+                        <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                          {aiGeneratedData.analysis}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-6 border-t border-gray-200">
+              <button
+                onClick={applyAIData}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium py-3 px-6 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                Aplicar valores da IA
+              </button>
+              <button
+                onClick={keepOriginalData}
+                className="flex-1 bg-white border border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-xl hover:bg-gray-50 transition-all duration-200"
+              >
+                Manter minhas informações
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

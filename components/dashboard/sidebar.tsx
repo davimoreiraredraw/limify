@@ -14,12 +14,12 @@ import {
   Settings,
   CreditCard,
   LineChart,
-  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProgressRing } from "./progress-ring";
 import { useSidebar } from "@/lib/hooks/use-sidebar";
 import { useIsNewUser } from "@/lib/hooks/use-is-new-user";
+import { useOnboarding } from "@/contexts/onboarding-context";
 import { useEffect } from "react";
 
 const mainNavItems = [
@@ -73,6 +73,7 @@ export function DashboardSidebar() {
   const { isCollapsed, toggle, isMobile, isOpen, setIsCollapsed } =
     useSidebar();
   const { isNewUser, isLoading } = useIsNewUser();
+  const { setIsOnboardingOpen, isOnboardingCompleted } = useOnboarding();
 
   // Em dispositivos grandes, definir collapsed com base no localStorage ou padrão
   useEffect(() => {
@@ -172,23 +173,6 @@ export function DashboardSidebar() {
                 </h2>
               )}
               <div className="space-y-1">
-                {/* Mostrar "Bem Vindo" apenas para usuários novos */}
-                {isNewUser && !isLoading && (
-                  <Button
-                    variant={pathname === "/bem-vindo" ? "default" : "ghost"}
-                    className={cn(
-                      "w-full justify-start bg-purple-100 hover:bg-purple-200 text-purple-700",
-                      isCollapsed && !isMobile ? "px-2" : "px-4"
-                    )}
-                    asChild
-                  >
-                    <Link href="/bem-vindo" className="gap-2">
-                      <Sparkles className="h-4 w-4 shrink-0" />
-                      {(!isCollapsed || isMobile) && <span>Bem Vindo</span>}
-                    </Link>
-                  </Button>
-                )}
-
                 {mainNavItems.map((item) => (
                   <Button
                     key={item.href}

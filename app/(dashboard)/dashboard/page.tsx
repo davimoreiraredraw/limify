@@ -216,9 +216,9 @@ export default function DashboardPage() {
               </span>
               <div className="flex flex-col">
                 <div className="flex items-center gap-1 text-red-500">
-                  <span className="text-lg">-</span>
+                  <span className="text-lg">R$</span>
                   <span className="text-2xl font-medium">
-                    {formatCurrency(stats.gastosFixos.value).replace("-", "")}
+                    {formatCurrency(stats.gastosFixos.value).slice(3)}
                   </span>
                 </div>
                 <span className="text-xs text-muted-foreground">

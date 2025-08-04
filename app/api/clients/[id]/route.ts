@@ -1,6 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getClientById, updateClient, deleteClient } from "@/lib/clients";
 import { z } from "zod";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+// Função para obter o userId do usuário autenticado
+async function getUserId() {
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error || !session?.user?.id) {
+    throw new Error("Usuário não autenticado");
+  }
+
+  return session.user.id;
+}
 
 // Schema de validação para atualização de cliente
 const updateClientSchema = z.object({
@@ -22,7 +51,8 @@ interface Params {
 export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { id } = params;
-    const client = await getClientById(id);
+    const userId = await getUserId();
+    const client = await getClientById(id, userId);
 
     if (!client) {
       return NextResponse.json(
@@ -44,10 +74,11 @@ export async function GET(request: NextRequest, { params }: Params) {
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { id } = params;
+    const userId = await getUserId();
     const body = await request.json();
 
     // Verificar se o cliente existe
-    const existingClient = await getClientById(id);
+    const existingClient = await getClientById(id, userId);
     if (!existingClient) {
       return NextResponse.json(
         { error: "Cliente não encontrado" },
@@ -69,7 +100,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     const clientData = validationResult.data;
-    const updatedClient = await updateClient(id, clientData);
+    const updatedClient = await updateClient(id, clientData, userId);
 
     return NextResponse.json(updatedClient);
   } catch (error) {
@@ -84,9 +115,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { id } = params;
+    const userId = await getUserId();
 
     // Verificar se o cliente existe
-    const existingClient = await getClientById(id);
+    const existingClient = await getClientById(id, userId);
     if (!existingClient) {
       return NextResponse.json(
         { error: "Cliente não encontrado" },
@@ -94,7 +126,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       );
     }
 
-    const result = await deleteClient(id);
+    const result = await deleteClient(id, userId);
 
     if (result) {
       return new NextResponse(null, { status: 204 });

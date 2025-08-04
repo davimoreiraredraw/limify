@@ -31,6 +31,7 @@ interface BudgetKanbanProps {
   columns: Record<string, Column>;
   setColumns: React.Dispatch<React.SetStateAction<Record<string, Column>>>;
   columnOrder: string[];
+  setColumnOrder: React.Dispatch<React.SetStateAction<string[]>>;
   budgets: BudgetWithTotal[];
   setBudgets: React.Dispatch<React.SetStateAction<BudgetWithTotal[]>>;
   isLoading: boolean;
@@ -40,6 +41,7 @@ export default function BudgetKanban({
   columns,
   setColumns,
   columnOrder,
+  setColumnOrder,
   budgets,
   setBudgets,
   isLoading,
@@ -51,12 +53,64 @@ export default function BudgetKanban({
     FECHADOS: false,
   });
 
+  // Estado para controlar a criação de nova coluna
+  const [isCreatingColumn, setIsCreatingColumn] = useState(false);
+  const [newColumnName, setNewColumnName] = useState("");
+
   // Função para alternar a visibilidade do valor de uma coluna
   const toggleValueVisibility = (columnId: string) => {
     setHiddenValues((prev) => ({
       ...prev,
       [columnId]: !prev[columnId],
     }));
+  };
+
+  // Função para adicionar nova coluna
+  const addNewColumn = () => {
+    if (!newColumnName.trim()) return;
+
+    const newColumnId = newColumnName.trim().toUpperCase();
+
+    // Verificar se a coluna já existe
+    if (columns[newColumnId]) {
+      alert("Uma coluna com este nome já existe!");
+      return;
+    }
+
+    const newColumn: Column = {
+      id: newColumnId,
+      title: newColumnName.trim(),
+      count: 0,
+      totalValue: 0,
+      budgetIds: [],
+    };
+
+    setColumns((prev) => ({
+      ...prev,
+      [newColumnId]: newColumn,
+    }));
+
+    // Adicionar à ordem das colunas
+    setColumnOrder((prev) => [...prev, newColumnId]);
+
+    // Resetar o estado
+    setNewColumnName("");
+    setIsCreatingColumn(false);
+  };
+
+  // Função para cancelar a criação
+  const cancelCreateColumn = () => {
+    setNewColumnName("");
+    setIsCreatingColumn(false);
+  };
+
+  // Função para lidar com Enter e Escape
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      addNewColumn();
+    } else if (e.key === "Escape") {
+      cancelCreateColumn();
+    }
   };
 
   // Manipular o drag and drop
@@ -333,16 +387,65 @@ export default function BudgetKanban({
 
         {/* Botão de adicionar mais colunas */}
         <div className="flex items-center">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-11 w-11 rounded-full border-dashed border-2 bg-white shadow-sm hover:bg-gray-100"
-          >
-            <PlusCircle className="h-5 w-5" />
-          </Button>
-          <span className="ml-3 text-sm font-medium text-muted-foreground">
-            Adicionar outra
-          </span>
+          {isCreatingColumn ? (
+            <div className="flex flex-col gap-2 min-w-[350px]">
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={newColumnName}
+                    onChange={(e) => setNewColumnName(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Nome da coluna..."
+                    className="font-semibold bg-transparent border-none outline-none focus:ring-0 px-0 py-0 text-lg"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-gray-50 p-4 min-h-[350px] border border-dashed border-gray-300">
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center text-sm text-gray-500">
+                    <p>Digite o nome da coluna e pressione Enter</p>
+                    <p className="text-xs mt-1">Pressione Esc para cancelar</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-2">
+                <Button
+                  size="sm"
+                  onClick={addNewColumn}
+                  disabled={!newColumnName.trim()}
+                  className="text-xs"
+                >
+                  Criar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={cancelCreateColumn}
+                  className="text-xs"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 rounded-full border-dashed border-2 bg-white shadow-sm hover:bg-gray-100"
+              onClick={() => setIsCreatingColumn(true)}
+            >
+              <PlusCircle className="h-5 w-5" />
+            </Button>
+          )}
+          {!isCreatingColumn && (
+            <span className="ml-3 text-sm font-medium text-muted-foreground">
+              Adicionar outra
+            </span>
+          )}
         </div>
       </div>
     </DragDropContext>
