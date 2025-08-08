@@ -23,7 +23,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         }`}
       >
         <DashboardHeader />
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto bg-[#F8F9FC] p-8">
+          {children}
+        </main>
         <footer className="py-4 px-8 border-t text-center text-sm text-muted-foreground bg-white">
           <p>
             © {new Date().getFullYear()} Limify. Todos os direitos reservados.

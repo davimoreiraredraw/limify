@@ -67,7 +67,7 @@ export default function BudgetTypes({
           {budgetTypes.map((type) => (
             <div
               key={type.id}
-              className="border rounded-lg p-4 cursor-pointer transition-colors hover:border-gray-300"
+              className="bg-white border rounded-lg p-4 cursor-pointer transition-colors hover:border-gray-300"
               onClick={() => handleTypeSelect(type.id)}
             >
               <div className="flex flex-col items-center text-center">

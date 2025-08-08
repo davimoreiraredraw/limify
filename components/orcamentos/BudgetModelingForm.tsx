@@ -622,11 +622,8 @@ export default function BudgetModelingForm({
                 Qual é o nome do projeto?
               </h3>
 
-              <div className="border rounded-lg p-5 bg-indigo-50 border-indigo-600">
+              <div className="border rounded-lg p-5 bg-white">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-5 h-5 rounded-full border border-indigo-600 flex items-center justify-center">
-                    <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
-                  </div>
                   <h4 className="font-medium">Nome do projeto</h4>
                 </div>
 

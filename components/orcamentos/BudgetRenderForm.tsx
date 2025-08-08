@@ -487,21 +487,19 @@ export default function BudgetRenderForm({
               </h3>
 
               <div className="space-y-4">
-                <div className="border rounded-lg p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium">Nome do cliente</h4>
-                    <span className="text-xs text-gray-500">Opcional</span>
+                <div className="border rounded-lg p-5 mb-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <h4 className="font-medium">Informações do cliente</h4>
                   </div>
 
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <UserIcon className="h-4 w-4 text-gray-400" />
+                  <div className="pl-8">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 text-sm">R$</span>
                       </div>
                       <input
-                        ref={inputRef}
                         type="text"
-                        className="pl-10 pr-4 py-2 w-full border rounded-md text-sm"
+                        className="pl-8 pr-4 py-2 w-full border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
                         placeholder="Selecione um cliente ou crie um novo"
                         value={clientSearch}
                         onChange={(e) => {
@@ -513,12 +511,6 @@ export default function BudgetRenderForm({
                         readOnly
                       />
                     </div>
-                    <Button
-                      className="bg-indigo-600 text-white"
-                      onClick={() => setShowClientsModal(true)}
-                    >
-                      Selecionar
-                    </Button>
                   </div>
 
                   {clientId &&
@@ -571,16 +563,13 @@ export default function BudgetRenderForm({
               </div>
             </div>
 
-            <div>
+            <div className="mb-12">
               <h3 className="text-xl font-semibold mb-6">
                 Qual é o nome do projeto?
               </h3>
 
-              <div className="border rounded-lg p-5 bg-indigo-50 border-indigo-600">
+              <div className="bg-white border rounded-lg p-5 mb-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-5 h-5 rounded-full border border-indigo-600 flex items-center justify-center">
-                    <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
-                  </div>
                   <h4 className="font-medium">Nome do projeto</h4>
                 </div>
 

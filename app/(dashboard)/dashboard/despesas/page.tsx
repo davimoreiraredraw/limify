@@ -341,7 +341,7 @@ export default function DespesasPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8" onClick={handleClickOutside}>
+    <div className="flex flex-col gap-6" onClick={handleClickOutside}>
       <Toaster position="top-center" />
 
       <div className="flex items-center justify-between">
@@ -387,10 +387,6 @@ export default function DespesasPage() {
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1 text-red-500 text-sm">
-              <span>↑</span>
-              <span>2.29%</span>
-            </div>
           </div>
         </div>
 
@@ -406,10 +402,6 @@ export default function DespesasPage() {
                   {formatCurrency(totalPontuais).slice(3)}
                 </span>
               </div>
-            </div>
-            <div className="flex items-center gap-1 text-emerald-500 text-sm">
-              <span>↓</span>
-              <span>2.29%</span>
             </div>
           </div>
         </div>
@@ -427,108 +419,63 @@ export default function DespesasPage() {
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1 text-emerald-500 text-sm">
-              <span>↑</span>
-              <span>2.29%</span>
-            </div>
           </div>
         </div>
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="w-full flex">
-          <style jsx global>{`
-            .custom-tabs [data-state="active"] {
-              background-color: #4f46e5 !important;
-              color: white !important;
-            }
-          `}</style>
+        <div className="flex items-center justify-between">
           <Tabs
             value={abaAtiva}
             onValueChange={(value) =>
               setAbaAtiva(value as "fixas" | "pontuais" | "lixeira")
             }
-            className="w-full custom-tabs"
+            className="w-fit"
           >
-            <TabsList className="w-fit bg-transparent h-auto p-0 space-x-2">
+            <TabsList className="bg-[#1E1E1E]/10 p-1 rounded-lg">
               <TabsTrigger
                 value="fixas"
-                className="px-4 py-2 rounded-lg border data-[state=inactive]:border-gray-200"
+                className="rounded-md px-4 py-2 text-sm font-medium transition-colors data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm"
               >
                 Despesas fixas
               </TabsTrigger>
               <TabsTrigger
                 value="pontuais"
-                className="px-4 py-2 rounded-lg border data-[state=inactive]:border-gray-200"
+                className="rounded-md px-4 py-2 text-sm font-medium transition-colors data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm"
               >
                 Despesas pontuais
               </TabsTrigger>
               <TabsTrigger
                 value="lixeira"
-                className="px-4 py-2 rounded-lg border data-[state=inactive]:border-gray-200"
+                className="rounded-md px-4 py-2 text-sm font-medium transition-colors data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm"
               >
                 Lixeira
               </TabsTrigger>
             </TabsList>
           </Tabs>
-        </div>
 
-        {/* Botões de ação */}
-        <div className="flex flex-wrap md:flex-nowrap gap-2">
-          {abaAtiva !== "lixeira" ? (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-red-500 text-xs px-3 py-1 h-8 gap-1 border-red-200"
-                onClick={() => setAbaAtiva("lixeira")}
-              >
-                <Trash2Icon className="h-4 w-4" />
-                Lixeira{" "}
-                {despesas.filter((d) => d.is_deleted).length > 0 &&
-                  `(${despesas.filter((d) => d.is_deleted).length})`}
-              </Button>
-              {/* <Button
-                variant="outline"
-                size="sm"
-                className="text-amber-600 text-xs px-3 py-1 h-8 gap-1 border-amber-200"
-              >
-                <TagIcon className="h-4 w-4" />
-                Arquivados
-              </Button> */}
-              <div className="ml-auto flex gap-2">
-                <Button
-                  size="sm"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1 px-3 py-1 h-8"
-                  onClick={() => abrirModalCategoria()}
-                >
-                  <TagIcon className="h-4 w-4" />
-                  Criar categoria
-                </Button>
-                <Button
-                  size="sm"
-                  className={`bg-red-500 hover:bg-red-600 text-white gap-1 px-3 py-1 h-8 relative ${
-                    isHighlighted
-                      ? "ring-4 ring-red-300 ring-opacity-50 animate-pulse"
-                      : ""
-                  }`}
-                  onClick={() => abrirModal()}
-                >
-                  <PlusCircle className="h-4 w-4" />
-                  Adicionar despesa
-                </Button>
-              </div>
-            </>
-          ) : (
+          <div className="flex gap-2">
             <Button
-              variant="outline"
               size="sm"
-              className="text-gray-500 text-xs px-3 py-1 h-8 gap-1"
-              onClick={() => setAbaAtiva("fixas")}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1 px-3 py-1 h-8"
+              onClick={() => abrirModalCategoria()}
             >
-              Voltar
+              <TagIcon className="h-4 w-4" />
+              Criar categoria
             </Button>
-          )}
+            <Button
+              size="sm"
+              className={`bg-red-500 hover:bg-red-600 text-white gap-1 px-3 py-1 h-8 relative ${
+                isHighlighted
+                  ? "ring-4 ring-red-300 ring-opacity-50 animate-pulse"
+                  : ""
+              }`}
+              onClick={() => abrirModal()}
+            >
+              <PlusCircle className="h-4 w-4" />
+              Adicionar despesa
+            </Button>
+          </div>
         </div>
 
         {/* Tabela */}
