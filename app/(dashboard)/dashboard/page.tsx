@@ -164,156 +164,162 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8 p-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <DatePicker date={selectedDate} onDateChange={handleDateChange} />
-      </div>
+    <div className="min-h-screen">
+      <div className="flex flex-col gap-6 p-6 max-w-[1200px] mx-auto">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <DatePicker date={selectedDate} onDateChange={handleDateChange} />
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="rounded-lg border bg-card p-6 shadow-sm">
-            <div className="flex flex-col gap-1">
-              <span className="text-sm text-muted-foreground">
-                Orçamentos realizados
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-medium">
-                  {stats.orcamentosRealizados.value}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-lg bg-white p-5">
+              <div className="flex flex-col gap-1">
+                <span className="text-sm text-muted-foreground">
+                  Orçamentos realizados
                 </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-lg border bg-card p-6 shadow-sm">
-            <div className="flex flex-col gap-1">
-              <span className="text-sm text-muted-foreground">Faturamento</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-medium">
-                  {formatCurrency(stats.faturamento.value)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-lg border bg-card p-6 shadow-sm">
-            <div className="flex flex-col gap-1">
-              <span className="text-sm text-muted-foreground">
-                Projetos fechados
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-medium">
-                  {stats.projetosFechados.value}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-lg border bg-card p-6 shadow-sm">
-            <div className="flex flex-col gap-4">
-              <span className="text-sm text-muted-foreground">
-                Gastos fixos mensais
-              </span>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1 text-red-500">
-                  <span className="text-lg">R$</span>
+                <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-medium">
-                    {formatCurrency(stats.gastosFixos.value).slice(3)}
+                    {stats.orcamentosRealizados.value}
                   </span>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  Valor mensal recorrente
-                </span>
               </div>
+            </div>
+
+            <div className="rounded-lg bg-white p-5">
+              <div className="flex flex-col gap-1">
+                <span className="text-sm text-muted-foreground">
+                  Faturamento
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-medium">
+                    {formatCurrency(stats.faturamento.value)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-white p-5">
+              <div className="flex flex-col gap-1">
+                <span className="text-sm text-muted-foreground">
+                  Projetos fechados
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-medium">
+                    {stats.projetosFechados.value}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-white p-5">
+              <div className="flex flex-col gap-4">
+                <span className="text-sm text-muted-foreground">
+                  Gastos fixos mensais
+                </span>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1 text-red-500">
+                    <span className="text-lg">R$</span>
+                    <span className="text-2xl font-medium">
+                      {formatCurrency(stats.gastosFixos.value).slice(3)}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    Valor mensal recorrente
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-white p-5">
+            <div className="mb-4">
+              <h2 className="text-base font-medium">Estatísticas</h2>
+              <p className="text-xs text-muted-foreground">
+                {selectedDate.toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+
+            <div className="h-[180px]">
+              <StatsChart
+                gastos={stats.gastosFixos.value}
+                vendas={stats.faturamento.value}
+                lucro={stats.faturamento.value - stats.gastosFixos.value}
+              />
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-6 shadow-sm">
+        <div className="rounded-lg bg-white p-5">
           <div className="mb-6">
-            <h2 className="text-lg font-semibold">Estatísticas</h2>
-            <p className="text-sm text-muted-foreground">
-              {selectedDate.toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
+            <h2 className="text-lg font-semibold">Últimos orçamentos</h2>
           </div>
 
-          <StatsChart
-            gastos={stats.gastosFixos.value}
-            vendas={stats.faturamento.value}
-            lucro={stats.faturamento.value - stats.gastosFixos.value}
-          />
-        </div>
-      </div>
-
-      <div className="rounded-lg border bg-card p-6 shadow-sm">
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold">Últimos orçamentos</h2>
-        </div>
-
-        <div className="relative overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b text-xs uppercase">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium">Projeto</th>
-                <th className="px-4 py-3 text-left font-medium">Data</th>
-                <th className="px-4 py-3 text-left font-medium">Preço</th>
-                <th className="px-4 py-3 text-left font-medium">Analytics</th>
-                <th className="px-4 py-3 text-left font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quotes.map((orcamento, index) => (
-                <tr key={index} className="border-b last:border-0">
-                  <td className="whitespace-nowrap px-4 py-3 font-medium">
-                    {orcamento.projeto}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
-                    {orcamento.data}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    {formatCurrency(orcamento.preco)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    {orcamento.analytics === "Visualizado" && (
-                      <span className="flex items-center gap-2 text-emerald-500">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Visualizado
-                      </span>
-                    )}
-                    {orcamento.analytics === "Não gerado" && (
-                      <span className="flex items-center gap-2 text-red-500">
-                        <XCircle className="h-4 w-4" />
-                        Não gerado
-                      </span>
-                    )}
-                    {orcamento.analytics === "Pendente" && (
-                      <span className="flex items-center gap-2 text-amber-500">
-                        <Clock className="h-4 w-4" />
-                        Pendente
-                      </span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <span
-                      className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
-                        orcamento.status === "Completo"
-                          ? "bg-emerald-50 text-emerald-600"
-                          : orcamento.status === "Em andamento"
-                          ? "bg-amber-50 text-amber-600"
-                          : "bg-red-50 text-red-600"
-                      }`}
-                    >
-                      {orcamento.status}
-                    </span>
-                  </td>
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b text-xs uppercase">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium">Projeto</th>
+                  <th className="px-4 py-3 text-left font-medium">Data</th>
+                  <th className="px-4 py-3 text-left font-medium">Preço</th>
+                  <th className="px-4 py-3 text-left font-medium">Analytics</th>
+                  <th className="px-4 py-3 text-left font-medium">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {quotes.map((orcamento, index) => (
+                  <tr key={index} className="border-b last:border-0">
+                    <td className="whitespace-nowrap px-4 py-3 font-medium">
+                      {orcamento.projeto}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
+                      {orcamento.data}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {formatCurrency(orcamento.preco)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {orcamento.analytics === "Visualizado" && (
+                        <span className="flex items-center gap-2 text-emerald-500">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Visualizado
+                        </span>
+                      )}
+                      {orcamento.analytics === "Não gerado" && (
+                        <span className="flex items-center gap-2 text-red-500">
+                          <XCircle className="h-4 w-4" />
+                          Não gerado
+                        </span>
+                      )}
+                      {orcamento.analytics === "Pendente" && (
+                        <span className="flex items-center gap-2 text-amber-500">
+                          <Clock className="h-4 w-4" />
+                          Pendente
+                        </span>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <span
+                        className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
+                          orcamento.status === "Completo"
+                            ? "bg-emerald-50 text-emerald-600"
+                            : orcamento.status === "Em andamento"
+                            ? "bg-amber-50 text-amber-600"
+                            : "bg-red-50 text-red-600"
+                        }`}
+                      >
+                        {orcamento.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

@@ -1,18 +1,10 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/app/lib/expenses";
-import {
-  Check,
-  ChevronRight,
-  Settings,
-  Eye,
-  Download,
-  Share2,
-  X,
-} from "lucide-react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { X, Check, ChevronRight, Eye, Download } from "lucide-react";
+import { formatCurrency } from "@/app/lib/expenses";
 
 interface BudgetLandingPageProps {
   budgetData: {
@@ -36,18 +28,179 @@ interface BudgetLandingPageProps {
     tipoDesconto?: "percentual" | "valor";
     references?: string[];
   };
+  configData?: {
+    title?: string;
+    subtitle?: string;
+    headerImage?: string;
+  };
   onBack?: () => void;
   onPublish?: () => void;
+  showCloseButton?: boolean;
 }
 
 export default function BudgetLandingPage({
   budgetData,
+  configData,
   onBack,
   onPublish,
+  showCloseButton = true,
 }: BudgetLandingPageProps) {
   const [activeSection, setActiveSection] = useState("overview");
   const [isHeaderCompact, setIsHeaderCompact] = useState(false);
   const router = useRouter();
+
+  // Dados estáticos para orçamentos publicados (configurados na preview)
+  const sectionNames = {
+    overview: "Visão Geral",
+    deliverables: "Entregáveis",
+    phases: "Fases do Projeto",
+    investment: "Investimento",
+    about: "Sobre nós",
+    team: "Equipe",
+  };
+
+  const deliverables = [
+    {
+      id: "1",
+      title: "Planta de layout funcional",
+      description: "Layout otimizado dos ambientes",
+    },
+    {
+      id: "2",
+      title: "Moodboard com materiais, acabamentos e paleta de cores",
+      description: "Seleção de materiais e cores",
+    },
+    {
+      id: "3",
+      title: "Projeto luminotécnico, elétrico e hidráulico",
+      description: "Projetos técnicos complementares",
+    },
+    {
+      id: "4",
+      title: "Acompanhamento técnico sob demanda",
+      description: "Suporte durante a execução",
+    },
+    {
+      id: "5",
+      title: "Modelos 3D com imagens renderizadas",
+      description: "Visualizações realistas do projeto",
+    },
+    {
+      id: "6",
+      title: "Book técnico com cortes, elevações e pranchas executivas",
+      description: "Documentação técnica completa",
+    },
+  ];
+
+  const deliverablesConfig = {
+    title: "O que está incluso no seu projeto",
+    description:
+      "Aqui está um panorama completo do que será desenvolvido para sua residência:",
+  };
+
+  const phases = [
+    {
+      id: "1",
+      title: "Briefing",
+      content:
+        "Coleta aprofundada de informações, preferências, estilo de vida, materiais desejados e referências visuais.",
+    },
+    {
+      id: "2",
+      title: "Anteprojeto",
+      content:
+        "Modelagem 3D, vistas renderizadas dos ambientes e ajustes finos com base no seu feedback.",
+    },
+    {
+      id: "3",
+      title: "Projeto Executivo",
+      content:
+        "Detalhamento técnico completo com plantas, cortes, elevações e especificações para execução.",
+    },
+    {
+      id: "4",
+      title: "Acompanhamento",
+      content:
+        "Suporte durante a execução da obra com visitas técnicas e esclarecimento de dúvidas.",
+    },
+  ];
+
+  const phasesConfig = {
+    title: "Fases do Projeto",
+    description:
+      "Para garantir um projeto fluido e bem estruturado, dividimos o trabalho em 4 etapas principais:",
+  };
+
+  const investment = {
+    title: "Projeto Completo",
+    value: "R$ 8.700,00",
+    items: [
+      {
+        id: "1",
+        text: "Todos os entregáveis",
+      },
+      {
+        id: "2",
+        text: "Todas as fases do projeto",
+      },
+    ],
+  };
+
+  const investmentConfig = {
+    title: "Investimento do projeto",
+    description:
+      "Você encontrará abaixo o valor total do projeto, com possibilidade de parcelamento. Este investimento contempla todas as etapas, entregáveis e suporte descritos.",
+  };
+
+  const aboutConfig = {
+    title:
+      "Um escritório apaixonado por arquitetura afetiva, funcional e atemporal.",
+    paragraphs: [
+      "Acreditamos que cada casa deve refletir a essência de quem a habita. Nossa abordagem vai além da estética, focando na funcionalidade, no bem-estar e na experiência de viver em cada espaço que projetamos.",
+      "Com processos bem definidos, tecnologia de ponta e toque humano, criamos ambientes que não apenas impressionam visualmente, mas que também proporcionam conforto e praticidade para o dia a dia.",
+    ],
+    image:
+      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2001&q=80",
+  };
+
+  const teamMembers = [
+    {
+      id: "1",
+      name: "Laura Menezes",
+      role: "Arquiteta Responsável",
+      description:
+        "Formada pela USP, especialista em projetos residenciais de alto padrão com mais de 10 anos de experiência.",
+      initials: "LM",
+      bgColor: "from-blue-400 to-purple-500",
+      image: undefined as string | undefined,
+    },
+    {
+      id: "2",
+      name: "Carlos Vieira",
+      role: "Especialista em 3D",
+      description:
+        "Expert em modelagem 3D e renderização, responsável por criar as visualizações fotorrealísticas dos projetos.",
+      initials: "CV",
+      bgColor: "from-green-400 to-blue-500",
+      image: undefined as string | undefined,
+    },
+    {
+      id: "3",
+      name: "Renata Franco",
+      role: "Documentação Técnica",
+      description:
+        "Responsável por toda a documentação técnica e detalhamento executivo dos projetos.",
+      initials: "RF",
+      bgColor: "from-purple-400 to-pink-500",
+      image: undefined as string | undefined,
+    },
+  ];
+
+  const teamConfig = {
+    title: "Nossa equipe",
+    description:
+      "Conheça os profissionais que estarão envolvidos no seu projeto:",
+  };
 
   useEffect(() => {
     // Função para controlar o scroll
@@ -74,12 +227,12 @@ export default function BudgetLandingPage({
   }, []);
 
   const navigationItems = [
-    { id: "overview", label: "Visão Geral", icon: Eye },
-    { id: "deliverables", label: "Entregáveis", icon: Download },
-    { id: "phases", label: "Fases do Projeto", icon: Settings },
-    { id: "investment", label: "Investimento", icon: Settings },
-    { id: "about", label: "Sobre nós", icon: Settings },
-    { id: "team", label: "Equipe", icon: Settings },
+    { id: "overview", label: sectionNames.overview, icon: Eye },
+    { id: "deliverables", label: sectionNames.deliverables, icon: Download },
+    { id: "phases", label: sectionNames.phases, icon: ChevronRight },
+    { id: "investment", label: sectionNames.investment, icon: ChevronRight },
+    { id: "about", label: sectionNames.about, icon: ChevronRight },
+    { id: "team", label: sectionNames.team, icon: ChevronRight },
   ];
 
   const calculateTotalBudget = () => {
@@ -156,8 +309,9 @@ export default function BudgetLandingPage({
         isHeaderCompact ? "h-32" : "h-screen"
       }`}
       style={{
-        backgroundImage:
-          "url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2075&q=80')",
+        backgroundImage: configData?.headerImage
+          ? `url('${configData.headerImage}')`
+          : "url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2075&q=80')",
       }}
     >
       {/* Overlay escuro para melhorar legibilidade do texto */}
@@ -179,7 +333,8 @@ export default function BudgetLandingPage({
                     : "text-4xl lg:text-6xl"
                 }`}
               >
-                Proposta Comercial: {budgetData.clientName}
+                {configData?.title ||
+                  `Proposta Comercial: ${budgetData.clientName}`}
               </h1>
               <p
                 className={`text-gray-200 transition-all duration-1000 ${
@@ -188,7 +343,7 @@ export default function BudgetLandingPage({
                     : "text-xl lg:text-2xl"
                 }`}
               >
-                Preparado por: Estúdio Meza
+                {configData?.subtitle || "Preparado por: Estúdio Meza"}
               </p>
             </div>
             <div
@@ -241,6 +396,39 @@ export default function BudgetLandingPage({
     </div>
   );
 
+  const renderNavigation = () => (
+    <div
+      className={`fixed left-0 top-0 h-full w-64 bg-gray-50 border-r border-gray-200 z-30 transition-all duration-1000 transform ${
+        isHeaderCompact ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
+      <div className="pt-20 px-6">
+        <nav className="space-y-2">
+          {navigationItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => scrollToSection(item.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  isActive
+                    ? "bg-blue-100 text-blue-700 font-medium"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="flex-1">{item.label}</span>
+                {isActive && <ChevronRight className="w-4 h-4" />}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    </div>
+  );
+
   const renderMainContent = () => (
     <div
       className={`bg-white transition-all duration-1000 ${
@@ -250,15 +438,13 @@ export default function BudgetLandingPage({
       <div className="max-w-4xl mx-auto p-8 lg:p-12">
         {/* Overview Section */}
         <section id="overview" className="space-y-12 mb-20">
-          {/* Section Title - Opaque */}
           <div className="mb-8">
             <div className="text-gray-300 text-sm font-medium tracking-wider uppercase mb-2">
-              Visão Geral
+              {sectionNames.overview}
             </div>
             <div className="w-full h-px bg-gray-200"></div>
           </div>
 
-          {/* Welcome Section */}
           <div>
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
               Bem-vindo à sua nova casa, {budgetData.clientName}!
@@ -281,82 +467,54 @@ export default function BudgetLandingPage({
 
         {/* Deliverables Section */}
         <section id="deliverables" className="space-y-12 mb-20">
-          {/* Section Title - Opaque */}
           <div className="mb-8">
             <div className="text-gray-300 text-sm font-medium tracking-wider uppercase mb-2">
-              Entregáveis
+              {sectionNames.deliverables}
             </div>
             <div className="w-full h-px bg-gray-200"></div>
           </div>
 
           <div>
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              O que está incluso no seu projeto
+              {deliverablesConfig.title}
             </h2>
             <p className="text-gray-600 mb-8 text-lg">
-              Aqui está um panorama completo do que será desenvolvido para sua
-              residência:
+              {deliverablesConfig.description}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
-                    <Check className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <span className="text-gray-700 text-lg">
-                    Planta de layout funcional
-                  </span>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
-                    <Check className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <span className="text-gray-700 text-lg">
-                    Moodboard com materiais, acabamentos e paleta de cores
-                  </span>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
-                    <Check className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <span className="text-gray-700 text-lg">
-                    Projeto luminotécnico, elétrica e hidráulico
-                  </span>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
-                    <Check className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <span className="text-gray-700 text-lg">
-                    Acompanhamento técnico sob demanda
-                  </span>
-                </div>
+                {deliverables
+                  .slice(0, Math.ceil(deliverables.length / 2))
+                  .map((deliverable) => (
+                    <div
+                      key={deliverable.id}
+                      className="flex items-start gap-4"
+                    >
+                      <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
+                        <Check className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <span className="text-gray-700 text-lg">
+                        {deliverable.title}
+                      </span>
+                    </div>
+                  ))}
               </div>
               <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
-                    <Check className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <span className="text-gray-700 text-lg">
-                    Modelagem 3D com imagens renderizadas
-                  </span>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
-                    <Check className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <span className="text-gray-700 text-lg">
-                    Book técnico com cortes, elevações e pranchas executivas
-                  </span>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
-                    <Check className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <span className="text-gray-700 text-lg">
-                    Caderno de marcenaria e mobiliário
-                  </span>
-                </div>
+                {deliverables
+                  .slice(Math.ceil(deliverables.length / 2))
+                  .map((deliverable) => (
+                    <div
+                      key={deliverable.id}
+                      className="flex items-start gap-4"
+                    >
+                      <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
+                        <Check className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <span className="text-gray-700 text-lg">
+                        {deliverable.title}
+                      </span>
+                    </div>
+                  ))}
               </div>
             </div>
           </div>
@@ -364,110 +522,49 @@ export default function BudgetLandingPage({
 
         {/* Phases Section */}
         <section id="phases" className="space-y-12 mb-20">
-          {/* Section Title - Opaque */}
           <div className="mb-8">
             <div className="text-gray-300 text-sm font-medium tracking-wider uppercase mb-2">
-              Fases do Projeto
+              {sectionNames.phases}
             </div>
             <div className="w-full h-px bg-gray-200"></div>
           </div>
 
           <div>
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              Fases do Projeto
+              {phasesConfig.title}
             </h2>
             <p className="text-gray-600 mb-12 text-lg">
-              Para garantir um projeto fluido e bem estruturado, dividimos o
-              trabalho em 4 etapas principais:
+              {phasesConfig.description}
             </p>
             <div className="relative">
               <div className="space-y-16">
-                <div className="flex items-start gap-8 relative">
-                  <div className="flex items-center gap-4">
-                    <div className="w-4 h-4 bg-blue-500 rounded-full flex-shrink-0 z-10 relative"></div>
-                    <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-sm font-medium">
-                      Fase 1
-                    </div>
-                  </div>
-                  <div className="flex-1 pt-0">
-                    <h3 className="text-3xl font-bold text-gray-900 mb-4">
-                      Briefing
-                    </h3>
-                    <p className="text-gray-600 text-lg leading-relaxed">
-                      Coleta aprofundada de informações, preferências, estilo de
-                      vida, materiais desejados e referências visuais.
-                    </p>
-                  </div>
-                  {/* Linha conectando para próxima fase - conecta até a próxima bolinha */}
+                {phases.map((phase, index) => (
                   <div
-                    className="absolute left-2 top-2 w-px bg-gray-300 z-0"
-                    style={{ height: "calc(4rem + 8px)" }}
-                  ></div>
-                </div>
-
-                <div className="flex items-start gap-8 relative">
-                  <div className="flex items-center gap-4">
-                    <div className="w-4 h-4 bg-blue-500 rounded-full flex-shrink-0 z-10 relative"></div>
-                    <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-sm font-medium">
-                      Fase 2
+                    key={phase.id}
+                    className="flex items-start gap-8 relative"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-4 h-4 bg-blue-500 rounded-full flex-shrink-0 z-10 relative"></div>
+                      <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-sm font-medium">
+                        Fase {index + 1}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1 pt-0">
-                    <h3 className="text-3xl font-bold text-gray-900 mb-4">
-                      Estudo Preliminar
-                    </h3>
-                    <p className="text-gray-600 text-lg leading-relaxed">
-                      Proposta inicial de layout e moodboard com texturas,
-                      cores, referências e elementos visuais do projeto.
-                    </p>
-                  </div>
-                  {/* Linha conectando para próxima fase - conecta até a próxima bolinha */}
-                  <div
-                    className="absolute left-2 top-2 w-px bg-gray-300 z-0"
-                    style={{ height: "calc(4rem + 8px)" }}
-                  ></div>
-                </div>
-
-                <div className="flex items-start gap-8 relative">
-                  <div className="flex items-center gap-4">
-                    <div className="w-4 h-4 bg-blue-500 rounded-full flex-shrink-0 z-10 relative"></div>
-                    <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-sm font-medium">
-                      Fase 3
+                    <div className="flex-1 pt-0">
+                      <h3 className="text-3xl font-bold text-gray-900 mb-4">
+                        {phase.title}
+                      </h3>
+                      <p className="text-gray-600 text-lg leading-relaxed">
+                        {phase.content}
+                      </p>
                     </div>
+                    {index < phases.length - 1 && (
+                      <div
+                        className="absolute left-2 top-2 w-px bg-gray-300 z-0"
+                        style={{ height: "calc(4rem + 8px)" }}
+                      ></div>
+                    )}
                   </div>
-                  <div className="flex-1 pt-0">
-                    <h3 className="text-3xl font-bold text-gray-900 mb-4">
-                      Anteprojeto
-                    </h3>
-                    <p className="text-gray-600 text-lg leading-relaxed">
-                      Modelagem 3D, vistas renderizadas dos ambientes e ajustes
-                      finos com base no seu feedback.
-                    </p>
-                  </div>
-                  {/* Linha conectando para próxima fase - conecta até a próxima bolinha */}
-                  <div
-                    className="absolute left-2 top-2 w-px bg-gray-300 z-0"
-                    style={{ height: "calc(4rem + 8px)" }}
-                  ></div>
-                </div>
-
-                <div className="flex items-start gap-8">
-                  <div className="flex items-center gap-4">
-                    <div className="w-4 h-4 bg-blue-500 rounded-full flex-shrink-0 z-10 relative"></div>
-                    <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-sm font-medium">
-                      Fase 4
-                    </div>
-                  </div>
-                  <div className="flex-1 pt-0">
-                    <h3 className="text-3xl font-bold text-gray-900 mb-4">
-                      Projeto Executivo
-                    </h3>
-                    <p className="text-gray-600 text-lg leading-relaxed">
-                      Documentação completa para obra: plantas técnicas,
-                      detalhamentos, memorial descritivo e compatibilizações.
-                    </p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
@@ -475,22 +572,19 @@ export default function BudgetLandingPage({
 
         {/* Investment Section */}
         <section id="investment" className="space-y-12 mb-20">
-          {/* Section Title - Opaque */}
           <div className="mb-8">
             <div className="text-gray-300 text-sm font-medium tracking-wider uppercase mb-2">
-              Investimento
+              {sectionNames.investment}
             </div>
             <div className="w-full h-px bg-gray-200"></div>
           </div>
 
           <div>
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              Investimento do projeto
+              {investmentConfig.title}
             </h2>
             <p className="text-gray-600 mb-12 text-lg">
-              Você encontrará abaixo o valor total do projeto, com possibilidade
-              de parcelamento. Este investimento contempla todas as etapas,
-              entregáveis e suporte descritos.
+              {investmentConfig.description}
             </p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="space-y-8">
@@ -505,7 +599,7 @@ export default function BudgetLandingPage({
                       Valor total do contrato
                     </h3>
                     <p className="text-2xl font-bold text-gray-900 mb-1">
-                      {formatCurrency(calculateTotalBudget())}
+                      {investment.value}
                     </p>
                     <p className="text-gray-500 text-sm">(valor estimado)</p>
                   </div>
@@ -567,32 +661,18 @@ export default function BudgetLandingPage({
 
               <div className="bg-gray-50 rounded-xl p-8">
                 <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-                  Projeto Completo
+                  {investment.title}
                 </h3>
                 <div className="text-4xl font-bold text-gray-900 mb-8 text-center">
-                  {formatCurrency(calculateTotalBudget())}
+                  {investment.value}
                 </div>
                 <div className="space-y-4 mb-8">
-                  <div className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-blue-500" />
-                    <span className="text-gray-700">Todos os entregáveis</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-blue-500" />
-                    <span className="text-gray-700">
-                      Todas as fases do projeto
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-blue-500" />
-                    <span className="text-gray-700">Renderizações 3D</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-blue-500" />
-                    <span className="text-gray-700">
-                      Suporte durante desenvolvimento
-                    </span>
-                  </div>
+                  {investment.items.map((item) => (
+                    <div key={item.id} className="flex items-center gap-3">
+                      <Check className="w-5 h-5 text-blue-500" />
+                      <span className="text-gray-700">{item.text}</span>
+                    </div>
+                  ))}
                 </div>
                 <Button
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 text-lg rounded-xl"
@@ -607,10 +687,9 @@ export default function BudgetLandingPage({
 
         {/* About Section */}
         <section id="about" className="space-y-12 mb-20">
-          {/* Section Title - Opaque */}
           <div className="mb-8">
             <div className="text-gray-300 text-sm font-medium tracking-wider uppercase mb-2">
-              Sobre nós
+              {sectionNames.about}
             </div>
             <div className="w-full h-px bg-gray-200"></div>
           </div>
@@ -619,22 +698,12 @@ export default function BudgetLandingPage({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
                 <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                  Um escritório apaixonado por arquitetura afetiva, funcional e
-                  atemporal.
+                  {aboutConfig.title}
                 </h2>
                 <div className="space-y-6 text-gray-600 text-lg leading-relaxed">
-                  <p>
-                    Acreditamos que cada casa deve refletir a essência de quem a
-                    habita. Nossa abordagem vai além da estética, focando na
-                    funcionalidade, no bem-estar e na experiência de viver em
-                    cada espaço que projetamos.
-                  </p>
-                  <p>
-                    Com processos bem definidos, tecnologia de ponta e toque
-                    humano, criamos ambientes que não apenas impressionam
-                    visualmente, mas que também proporcionam conforto e
-                    praticidade para o dia a dia.
-                  </p>
+                  {aboutConfig.paragraphs.map((paragraph, index) => (
+                    <p key={index}>{paragraph}</p>
+                  ))}
                 </div>
                 <div className="mt-8 grid grid-cols-2 gap-6">
                   <div className="text-center">
@@ -653,7 +722,7 @@ export default function BudgetLandingPage({
               </div>
               <div className="relative">
                 <img
-                  src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2001&q=80"
+                  src={aboutConfig.image}
                   alt="Modern living room"
                   className="w-full h-96 object-cover rounded-xl shadow-lg"
                 />
@@ -664,67 +733,52 @@ export default function BudgetLandingPage({
 
         {/* Team Section */}
         <section id="team" className="space-y-12 mb-20">
-          {/* Section Title - Opaque */}
           <div className="mb-8">
             <div className="text-gray-300 text-sm font-medium tracking-wider uppercase mb-2">
-              Equipe
+              {sectionNames.team}
             </div>
             <div className="w-full h-px bg-gray-200"></div>
           </div>
 
           <div>
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              Nossa equipe
+              {teamConfig.title}
             </h2>
             <p className="text-gray-600 mb-12 text-lg">
-              Conheça os profissionais que estarão envolvidos no seu projeto:
+              {teamConfig.description}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center bg-gray-50 rounded-xl p-8">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full mx-auto mb-6 flex items-center justify-center">
-                  <span className="text-3xl font-bold text-white">LM</span>
+              {teamMembers.map((member) => (
+                <div
+                  key={member.id}
+                  className="text-center bg-gray-50 rounded-xl p-8"
+                >
+                  <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center rounded-full overflow-hidden">
+                    {member.image ? (
+                      <img
+                        src={member.image}
+                        alt={member.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className={`w-full h-full bg-gradient-to-br ${member.bgColor} flex items-center justify-center`}
+                      >
+                        <span className="text-3xl font-bold text-white">
+                          {member.initials}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {member.name}
+                  </h3>
+                  <p className="text-blue-600 font-medium mb-4">
+                    {member.role}
+                  </p>
+                  <p className="text-gray-600 text-sm">{member.description}</p>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Laura Menezes
-                </h3>
-                <p className="text-blue-600 font-medium mb-4">
-                  Arquiteta Responsável
-                </p>
-                <p className="text-gray-600 text-sm">
-                  Formada pela USP, especialista em projetos residenciais de
-                  alto padrão com mais de 10 anos de experiência.
-                </p>
-              </div>
-              <div className="text-center bg-gray-50 rounded-xl p-8">
-                <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center">
-                  <span className="text-3xl font-bold text-white">CV</span>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Carlos Vieira
-                </h3>
-                <p className="text-green-600 font-medium mb-4">
-                  Especialista em 3D
-                </p>
-                <p className="text-gray-600 text-sm">
-                  Expert em modelagem 3D e renderização, responsável por criar
-                  as visualizações fotorrealísticas dos projetos.
-                </p>
-              </div>
-              <div className="text-center bg-gray-50 rounded-xl p-8">
-                <div className="w-24 h-24 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full mx-auto mb-6 flex items-center justify-center">
-                  <span className="text-3xl font-bold text-white">RF</span>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Renata Franco
-                </h3>
-                <p className="text-purple-600 font-medium mb-4">
-                  Documentação Técnica
-                </p>
-                <p className="text-gray-600 text-sm">
-                  Responsável por toda a documentação técnica e detalhamento
-                  executivo dos projetos.
-                </p>
-              </div>
+              ))}
             </div>
           </div>
         </section>
@@ -732,48 +786,17 @@ export default function BudgetLandingPage({
     </div>
   );
 
-  const renderNavigation = () => (
-    <div
-      className={`fixed left-0 top-0 h-full w-64 bg-gray-50 border-r border-gray-200 z-30 transition-all duration-1000 transform ${
-        isHeaderCompact ? "translate-x-0" : "-translate-x-full"
-      }`}
-    >
-      <div className="pt-8 px-6">
-        <nav className="space-y-2">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => scrollToSection(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                  activeSection === item.id
-                    ? "bg-blue-100 text-blue-700 font-medium"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                {item.label}
-                {activeSection === item.id && (
-                  <ChevronRight className="w-4 h-4 ml-auto" />
-                )}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-    </div>
-  );
-
   return (
     <div className="bg-white min-h-screen">
-      {/* Botão de fechar */}
-      <button
-        onClick={handleBack}
-        className="fixed top-4 right-4 z-50 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-all duration-300"
-      >
-        <X className="w-5 h-5 text-gray-600" />
-      </button>
+      {/* Botão de fechar - só mostra se showCloseButton for true */}
+      {showCloseButton && (
+        <button
+          onClick={handleBack}
+          className="fixed top-4 right-4 z-50 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-all duration-300"
+        >
+          <X className="w-5 h-5 text-gray-600" />
+        </button>
+      )}
 
       {renderHeader()}
       {renderNavigation()}

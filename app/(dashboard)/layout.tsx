@@ -15,7 +15,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   useOnboardingDetection();
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-[#F8F9FC]">
       <DashboardSidebar />
       <div
         className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
@@ -23,10 +23,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         }`}
       >
         <DashboardHeader />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
-          <div className="mx-auto max-w-7xl">{children}</div>
-        </main>
-        <footer className="py-4 px-8 border-t text-center text-sm text-muted-foreground">
+        <main className="flex-1 overflow-auto">{children}</main>
+        <footer className="py-4 px-8 border-t text-center text-sm text-muted-foreground bg-white">
           <p>
             © {new Date().getFullYear()} Limify. Todos os direitos reservados.
           </p>

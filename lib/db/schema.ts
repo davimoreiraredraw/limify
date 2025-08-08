@@ -496,3 +496,28 @@ export const sindusconValues = pgTable("sinduscon_values", {
 // Tipos para a tabela de valores da Sinduscon
 export type SindusconValue = InferSelectModel<typeof sindusconValues>;
 export type NewSindusconValue = InferInsertModel<typeof sindusconValues>;
+
+// Tabela para publicações de orçamentos
+export const budgetPublications = pgTable("budget_publications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  budget_id: uuid("budget_id").references(() => budgets.id, {
+    onDelete: "cascade",
+  }),
+  header_title: text("header_title").notNull(),
+  header_subtitle: text("header_subtitle").notNull(),
+  header_image: text("header_image"),
+  deliverables: text("deliverables"), // JSON com os entregáveis
+  phases: text("phases"), // JSON com as fases
+  investment: text("investment"), // JSON com os dados de investimento
+  about: text("about"), // JSON com os parágrafos da seção sobre
+  about_years_experience: integer("about_years_experience").default(0),
+  about_completed_projects: integer("about_completed_projects").default(0),
+  team: text("team"), // JSON com os dados da equipe
+  published_at: timestamp("published_at").defaultNow().notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tipos para a tabela de publicações
+export type BudgetPublication = InferSelectModel<typeof budgetPublications>;
+export type NewBudgetPublication = InferInsertModel<typeof budgetPublications>;

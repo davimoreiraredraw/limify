@@ -290,7 +290,7 @@ export default function BudgetM2Form({
     let finalTotal = itemsTotal;
 
     // Aplicar adicional de valor se essa opção estiver selecionada
-    if (opcoesAjusteValor.includes("adicionar")) {
+    if (opcoesAjusteValor.includes("adicional")) {
       finalTotal += adicionalValor;
     }
     // Aplicar desconto se essa opção estiver selecionada
@@ -433,33 +433,8 @@ export default function BudgetM2Form({
   const handleSubmitBudget = async () => {
     setIsSubmitting(true);
 
-    // Preparar dados para o preview
-    const previewData = {
-      projectName: projectName,
-      clientName: clientName,
-      projectDescription: projectDescription,
-      totalValue: calculateTotalBudget(),
-      items: budgetItems.map((item) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        pricePerSquareMeter: item.pricePerSquareMeter,
-        squareMeters: item.squareMeters,
-        total: item.total,
-        exibir: item.exibir,
-      })),
-      tipoAmbiente: tipoAmbiente,
-      valorComodos: valorComodos,
-      adicionalValor: opcoesAjusteValor.includes("adicional")
-        ? adicionalValor
-        : 0,
-      desconto: opcoesAjusteValor.includes("desconto") ? desconto : 0,
-      tipoDesconto: tipoDesconto,
-      references: selectedReferences,
-    };
-
     try {
-      // Ainda salvar no banco para quando for publicar
+      // Primeiro salvar no banco
       const payload = {
         name: projectName,
         description: projectDescription,
@@ -485,13 +460,39 @@ export default function BudgetM2Form({
       const data = await res.json();
 
       if (res.ok && data.success) {
+        // Preparar dados para o preview com o ID do orçamento salvo
+        const previewData = {
+          budgetId: data.id, // ID do orçamento salvo no banco
+          projectName: projectName,
+          clientName: clientName,
+          projectDescription: projectDescription,
+          totalValue: calculateTotalBudget(),
+          items: budgetItems.map((item) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            pricePerSquareMeter: item.pricePerSquareMeter,
+            squareMeters: item.squareMeters,
+            total: item.total,
+            exibir: item.exibir,
+          })),
+          tipoAmbiente: tipoAmbiente,
+          valorComodos: valorComodos,
+          adicionalValor: opcoesAjusteValor.includes("adicional")
+            ? adicionalValor
+            : 0,
+          desconto: opcoesAjusteValor.includes("desconto") ? desconto : 0,
+          tipoDesconto: tipoDesconto,
+          references: selectedReferences,
+        };
+
+        // Salvar no localStorage ao invés de URL
+        localStorage.setItem("budgetPreviewData", JSON.stringify(previewData));
+
         toast.success("Preview do orçamento gerado com sucesso!");
 
-        // Codificar os dados para passar via URL
-        const encodedData = encodeURIComponent(JSON.stringify(previewData));
-
-        // Redirecionar para a página de preview com os dados
-        window.open(`/orcamento/preview?data=${encodedData}`, "_blank");
+        // Redirecionar para a página de preview
+        window.open("/orcamento/preview", "_blank");
       } else {
         toast.error(data.error || "Erro ao gerar preview do orçamento");
       }

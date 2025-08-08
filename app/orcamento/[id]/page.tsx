@@ -1,143 +1,112 @@
 import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import {
+  budgets,
+  clientsTable,
+  budgetItems,
+  budgetReferences,
+  budgetPublications,
+} from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import BudgetLandingPage from "@/components/landing/BudgetLandingPage";
 
-interface BudgetData {
-  id: string;
-  name: string;
-  description: string;
-  client_name: string;
-  total: number;
-  phases?: Array<{
+interface PublicBudgetPageProps {
+  params: {
     id: string;
-    name: string;
-    description: string;
-    segments: Array<{
-      id: string;
-      name: string;
-      description: string;
-      activities: Array<{
-        id: string;
-        name: string;
-        description: string;
-        price_per_m2: number;
-        square_meters: number;
-        total: number;
-        exibir: boolean;
-      }>;
-    }>;
-    activities: Array<{
-      id: string;
-      name: string;
-      description: string;
-      price_per_m2: number;
-      square_meters: number;
-      total: number;
-      exibir: boolean;
-    }>;
-  }>;
-  additionals?: {
-    additional_value?: number;
-    discount?: number;
-    discount_type?: "percentual" | "valor";
   };
-  references?: string[];
 }
 
-async function getBudgetData(id: string): Promise<BudgetData | null> {
+async function getBudgetData(id: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/budgets/public/${id}`, {
-      cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    // Buscar orçamento com informações do cliente e dados de publicação
+    const budgetData = await db
+      .select({
+        budget: budgets,
+        client: clientsTable,
+        publication: budgetPublications,
+      })
+      .from(budgets)
+      .leftJoin(clientsTable, eq(budgets.client_id, clientsTable.id))
+      .leftJoin(
+        budgetPublications,
+        eq(budgets.id, budgetPublications.budget_id)
+      )
+      .where(eq(budgets.id, id))
+      .limit(1);
 
-    if (!res.ok) {
-      console.error("Erro ao buscar orçamento:", res.status, res.statusText);
+    if (budgetData.length === 0) {
       return null;
     }
 
-    const data = await res.json();
-    return data.success ? data.budget : null;
+    const budget = budgetData[0].budget;
+    const client = budgetData[0].client;
+    const publication = budgetData[0].publication;
+
+    // Transformar dados para o formato esperado pelo componente
+    return {
+      projectName: budget.name,
+      clientName: client?.name || "",
+      projectDescription: budget.description || "",
+      totalValue: Number(budget.total) || 0,
+      items: [], // TODO: Buscar itens do orçamento
+      tipoAmbiente: budget.model as "interior" | "exterior",
+      valorComodos: budget.value_type as "unico" | "individuais",
+      adicionalValor: 0,
+      desconto: Number(budget.discount) || 0,
+      tipoDesconto: budget.discount_type as "percentual" | "valor" | undefined,
+      references: [], // TODO: Buscar referências
+      configData: {
+        title:
+          publication?.header_title || `Proposta Comercial: ${budget.name}`,
+        subtitle: publication?.header_subtitle || "Preparado por: Estúdio Meza",
+        headerImage: publication?.header_image,
+      },
+      sectionConfigurations: publication
+        ? {
+            deliverables: JSON.parse(publication.deliverables || "{}"),
+            phases: JSON.parse(publication.phases || "{}"),
+            investment: JSON.parse(publication.investment || "{}"),
+            about: JSON.parse(publication.about || "{}"),
+            team: JSON.parse(publication.team || "{}"),
+          }
+        : null,
+    };
   } catch (error) {
-    console.error("Erro ao buscar orçamento:", error);
+    console.error("Erro ao buscar dados do orçamento:", error);
     return null;
   }
 }
 
-function transformBudgetData(budget: BudgetData) {
-  // Transformar os dados do banco para o formato esperado pelo componente
-  const items: Array<{
-    id: string;
-    name: string;
-    description: string;
-    pricePerSquareMeter: number;
-    squareMeters: number;
-    total: number;
-    exibir: boolean;
-  }> = [];
-
-  // Extrair itens das fases e segmentos
-  if (budget.phases) {
-    budget.phases.forEach((phase) => {
-      // Adicionar atividades diretas da fase
-      phase.activities?.forEach((activity) => {
-        items.push({
-          id: activity.id,
-          name: activity.name,
-          description: activity.description,
-          pricePerSquareMeter: activity.price_per_m2,
-          squareMeters: activity.square_meters,
-          total: activity.total,
-          exibir: activity.exibir,
-        });
-      });
-
-      // Adicionar atividades dos segmentos
-      phase.segments?.forEach((segment) => {
-        segment.activities?.forEach((activity) => {
-          items.push({
-            id: activity.id,
-            name: activity.name,
-            description: activity.description,
-            pricePerSquareMeter: activity.price_per_m2,
-            squareMeters: activity.square_meters,
-            total: activity.total,
-            exibir: activity.exibir,
-          });
-        });
-      });
-    });
-  }
+function transformBudgetData(data: any) {
+  if (!data) return null;
 
   return {
-    projectName: budget.name,
-    clientName: budget.client_name,
-    projectDescription: budget.description,
-    totalValue: budget.total,
-    items,
-    tipoAmbiente: "interior" as const,
-    valorComodos: "individuais" as const,
-    adicionalValor: budget.additionals?.additional_value,
-    desconto: budget.additionals?.discount,
-    tipoDesconto: budget.additionals?.discount_type,
-    references: budget.references || [],
+    ...data.budgetData,
+    configData: data.configData,
+    sectionConfigurations: data.sectionConfigurations,
   };
 }
 
-export default async function OrcamentoPreviewPage({
+export default async function PublicBudgetPage({
   params,
-}: {
-  params: { id: string };
-}) {
-  const budget = await getBudgetData(params.id);
+}: PublicBudgetPageProps) {
+  const budgetData = await getBudgetData(params.id);
 
-  if (!budget) {
+  if (!budgetData) {
     notFound();
   }
 
-  const budgetData = transformBudgetData(budget);
+  const transformedData = transformBudgetData(budgetData);
 
-  return <BudgetLandingPage budgetData={budgetData} />;
+  if (!transformedData) {
+    notFound();
+  }
+
+  return (
+    <BudgetLandingPage
+      budgetData={transformedData}
+      configData={transformedData.configData}
+      showCloseButton={false} // Não mostrar botão fechar em página pública
+    />
+  );
 }

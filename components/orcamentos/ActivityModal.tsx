@@ -96,12 +96,12 @@ export default function ActivityModal({
     <>
       {/* Overlay escuro */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-30 z-40"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
         onClick={onClose}
       />
 
       {/* Painel lateral */}
-      <div className="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white shadow-lg z-50 transform">
+      <div className="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white shadow-lg z-[101] transform">
         <style jsx global>{`
           @keyframes slideIn {
             from {
