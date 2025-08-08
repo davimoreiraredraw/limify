@@ -197,6 +197,13 @@
       "when": 1753453823099,
       "tag": "0028_blushing_leo",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "5",
+      "when": 1754332226790,
+      "tag": "0029_closed_fixer",
+      "breakpoints": true
     }
   ]
 }

@@ -85,369 +85,7 @@ export default function BudgetCompleteForm({
   const router = useRouter();
 
   // Adicionar estado para gerenciar as fases
-  const [budgetPhases, setBudgetPhases] = useState<Phase[]>([
-    {
-      id: 1,
-      name: "Proposta",
-      description: "Categoria sugerida",
-      baseValue: 85,
-      activities: [
-        {
-          id: 1,
-          name: "Reunião inicial",
-          description: "Reunião realizada com o cliente",
-          time: 2,
-          costPerHour: 34,
-          totalCost: 170,
-          complexity: 1,
-        },
-        {
-          id: 2,
-          name: "Elaboração da proposta",
-          description: "Proposta a ser apresentada",
-          time: 1,
-          costPerHour: 28.33,
-          totalCost: 85,
-          complexity: 2,
-        },
-      ],
-    },
-    {
-      id: 2,
-      name: "Estudo preliminar",
-      description: "Categoria sugerida",
-      baseValue: 85,
-      activities: [],
-      segments: [
-        {
-          id: 1,
-          name: "Ambiente 01",
-          description: "Segmento",
-          activities: [
-            {
-              id: 1,
-              name: "Referências - Conceito",
-              description: "Estudo realizado",
-              time: 2,
-              costPerHour: 34,
-              totalCost: 170,
-              complexity: 1,
-            },
-          ],
-        },
-        {
-          id: 2,
-          name: "Ambiente 02",
-          description: "Segmento",
-          activities: [
-            {
-              id: 2,
-              name: "Pesquisa de referências",
-              description: "Pesquisa no pinterest e usando IA no Redraw",
-              time: 2,
-              costPerHour: 27,
-              totalCost: 38,
-              complexity: 3,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 3,
-      name: "Revisão estudo preliminar",
-      description: "Categoria sugerida",
-      baseValue: 85,
-      activities: [
-        {
-          id: 1,
-          name: "Croquis",
-          description: "Desenhos de estudo realizados",
-          time: 2,
-          costPerHour: 34,
-          totalCost: 170,
-          complexity: 1,
-        },
-        {
-          id: 2,
-          name: "Revisão da planta layout",
-          description: "Detalhes que precisam ser feitos",
-          time: 1,
-          costPerHour: 28.33,
-          totalCost: 85,
-          complexity: 2,
-        },
-        {
-          id: 3,
-          name: "Pós edição",
-          description: "Trabalho terceirizado",
-          time: 2,
-          costPerHour: 27,
-          totalCost: 38,
-          complexity: 3,
-        },
-        {
-          id: 4,
-          name: "Montagem da apresentação",
-          description: "Trabalho realizado com designer",
-          time: 5,
-          costPerHour: 212.5,
-          totalCost: 425,
-          complexity: 4,
-        },
-        {
-          id: 5,
-          name: "Reunião de apresentação",
-          description: "Apresentação para o cliente",
-          time: 5,
-          costPerHour: 212.5,
-          totalCost: 425,
-          complexity: 4,
-        },
-      ],
-    },
-    {
-      id: 4,
-      name: "Projeto executivo",
-      description: "Categoria sugerida",
-      baseValue: 85,
-      activities: [],
-      segments: [
-        {
-          id: 1,
-          name: "Ambiente 01",
-          description: "Segmento",
-          activities: [
-            {
-              id: 1,
-              name: "Detalhamento de móveis",
-              description: "Detalhamento interiores",
-              time: 2,
-              costPerHour: 34,
-              totalCost: 170,
-              complexity: 1,
-            },
-            {
-              id: 2,
-              name: "Detalhamento de móveis soltos",
-              description: "Detalhamento interiores",
-              time: 2,
-              costPerHour: 34,
-              totalCost: 170,
-              complexity: 1,
-            },
-            {
-              id: 3,
-              name: "Detalhamento de pedra",
-              description: "Detalhamento interiores",
-              time: 2,
-              costPerHour: 34,
-              totalCost: 170,
-              complexity: 1,
-            },
-          ],
-        },
-        {
-          id: 2,
-          name: "Planta de layout",
-          description: "Segmento",
-          activities: [
-            {
-              id: 1,
-              name: "Localização móveis fixos",
-              description: "Detalhamento interiores",
-              time: 2,
-              costPerHour: 27,
-              totalCost: 38,
-              complexity: 3,
-            },
-            {
-              id: 2,
-              name: "Localização móveis soltos",
-              description: "Detalhamento interiores",
-              time: 2,
-              costPerHour: 27,
-              totalCost: 38,
-              complexity: 3,
-            },
-          ],
-        },
-        {
-          id: 3,
-          name: "Planilhas",
-          description: "Segmento",
-          activities: [
-            {
-              id: 1,
-              name: "Móveis",
-              description: "Detalhamento interiores",
-              time: 2,
-              costPerHour: 27,
-              totalCost: 38,
-              complexity: 3,
-            },
-            {
-              id: 2,
-              name: "Eletrodomésticos",
-              description: "Detalhamento interiores",
-              time: 2,
-              costPerHour: 27,
-              totalCost: 38,
-              complexity: 3,
-            },
-            {
-              id: 3,
-              name: "Louças e metais",
-              description: "Detalhamento interiores",
-              time: 2,
-              costPerHour: 27,
-              totalCost: 38,
-              complexity: 3,
-            },
-            {
-              id: 4,
-              name: "Luminárias e lâmpadas",
-              description: "Detalhamento interiores",
-              time: 2,
-              costPerHour: 27,
-              totalCost: 38,
-              complexity: 3,
-            },
-            {
-              id: 5,
-              name: "Cortinas",
-              description: "Detalhamento interiores",
-              time: 2,
-              costPerHour: 27,
-              totalCost: 38,
-              complexity: 3,
-            },
-          ],
-        },
-        {
-          id: 4,
-          name: "Iluminação",
-          description: "Segmento",
-          activities: [
-            {
-              id: 1,
-              name: "Planta iluminação",
-              description: "Detalhamento interiores",
-              time: 2,
-              costPerHour: 27,
-              totalCost: 38,
-              complexity: 3,
-            },
-            {
-              id: 2,
-              name: "Planta de gesso",
-              description: "Detalhamento interiores",
-              time: 2,
-              costPerHour: 27,
-              totalCost: 38,
-              complexity: 3,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 5,
-      name: "Acompanhamento de obra",
-      description: "Categoria sugerida",
-      baseValue: 85,
-      activities: [
-        {
-          id: 1,
-          name: "Visita ao local",
-          description: "Ir até lá",
-          time: 2,
-          costPerHour: 34,
-          totalCost: 170,
-          complexity: 1,
-        },
-        {
-          id: 2,
-          name: "Acompanhamento",
-          description: "Detalhes que precisam ser feitos",
-          time: 1,
-          costPerHour: 28.33,
-          totalCost: 85,
-          complexity: 2,
-        },
-      ],
-    },
-    {
-      id: 6,
-      name: "Avaliação final",
-      description: "Categoria sugerida",
-      baseValue: 85,
-      activities: [
-        {
-          id: 1,
-          name: "Visita ao local",
-          description: "Ir até lá",
-          time: 2,
-          costPerHour: 34,
-          totalCost: 170,
-          complexity: 1,
-        },
-        {
-          id: 2,
-          name: "Contratação de fotógrafo",
-          description: "Para fazer aquele portfolio lindo",
-          time: 1,
-          costPerHour: 28.33,
-          totalCost: 85,
-          complexity: 2,
-        },
-        {
-          id: 3,
-          name: "Relatório final",
-          description: "Relatório da obra e do projeto",
-          time: 1,
-          costPerHour: 28.33,
-          totalCost: 85,
-          complexity: 2,
-        },
-      ],
-    },
-    {
-      id: 7,
-      name: "Custos extras",
-      description: "Categoria fixa",
-      baseValue: 85,
-      activities: [
-        {
-          id: 1,
-          name: "Impressão",
-          description: "Papelaria com projetos",
-          time: 0,
-          costPerHour: 34,
-          totalCost: 34,
-          complexity: 1,
-        },
-        {
-          id: 2,
-          name: "Serviços terceirizados",
-          description: "Aquele freelancer",
-          time: 0,
-          costPerHour: 28.33,
-          totalCost: 28.33,
-          complexity: 2,
-        },
-        {
-          id: 3,
-          name: "Presentes",
-          description: "Papelarias no geral",
-          time: 0,
-          costPerHour: 28.33,
-          totalCost: 28.33,
-          complexity: 2,
-        },
-      ],
-    },
-  ]);
+  const [budgetPhases, setBudgetPhases] = useState<Phase[]>([]);
 
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const currentPhase = budgetPhases[currentPhaseIndex];
@@ -458,6 +96,9 @@ export default function BudgetCompleteForm({
   >(null);
 
   const [showOptionsMenu, setShowOptionsMenu] = useState<number | null>(null);
+  const [showSegmentOptionsMenu, setShowSegmentOptionsMenu] = useState<
+    number | null
+  >(null);
 
   const [currentPhaseForActivity, setCurrentPhaseForActivity] = useState<
     number | null
@@ -633,11 +274,17 @@ export default function BudgetCompleteForm({
           setShowOptionsMenu(null);
         }
       }
+      if (showSegmentOptionsMenu !== null) {
+        const target = event.target as HTMLElement;
+        if (!target.closest(".segment-options-menu")) {
+          setShowSegmentOptionsMenu(null);
+        }
+      }
     };
 
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
-  }, [showOptionsMenu]);
+  }, [showOptionsMenu, showSegmentOptionsMenu]);
 
   const handleSelectClient = (client: Client) => {
     setClientId(client.id);
@@ -687,6 +334,16 @@ export default function BudgetCompleteForm({
     setShowOptionsMenu(showOptionsMenu === phaseId ? null : phaseId);
   };
 
+  const handleSegmentOptionsClick = (
+    segmentId: number,
+    event: React.MouseEvent
+  ) => {
+    event.stopPropagation();
+    setShowSegmentOptionsMenu(
+      showSegmentOptionsMenu === segmentId ? null : segmentId
+    );
+  };
+
   const handleOpenActivityModal = (phaseId: number, segmentId?: number) => {
     setCurrentPhaseForActivity(phaseId);
     setPreSelectedSegment(segmentId || null);
@@ -711,11 +368,30 @@ export default function BudgetCompleteForm({
             name: activity.name,
             description: activity.description,
             time: activity.time,
-            costPerHour: activity.baseValue,
+            costPerHour: activity.baseValue, // Usar o valor base da atividade
             totalCost: activity.baseValue * activity.time,
             complexity: activity.complexity,
           };
 
+          // Se há um segmento pré-selecionado, adicionar a atividade ao segmento
+          if (preSelectedSegment !== null && phase.segments) {
+            const updatedSegments = phase.segments.map((segment) => {
+              if (segment.id === preSelectedSegment) {
+                return {
+                  ...segment,
+                  activities: [...segment.activities, newActivity],
+                };
+              }
+              return segment;
+            });
+
+            return {
+              ...phase,
+              segments: updatedSegments,
+            };
+          }
+
+          // Caso contrário, adicionar à fase diretamente
           return {
             ...phase,
             activities: [...phase.activities, newActivity],
@@ -732,7 +408,7 @@ export default function BudgetCompleteForm({
         id: Math.random(),
         name,
         description: "",
-        baseValue: 85,
+        baseValue: 0, // Será calculado automaticamente
         activities: [],
       };
 
@@ -1045,7 +721,7 @@ export default function BudgetCompleteForm({
                                     ).toLocaleDateString()}
                                   </div>
                                   <div className="text-sm text-gray-500">
-                                    Valor: R$ {budget.total}
+                                    Valor: {formatCurrency(budget.total)}
                                   </div>
                                 </div>
                               ))}
@@ -1093,31 +769,56 @@ export default function BudgetCompleteForm({
             {/* Seleção de moeda */}
             <div className="mb-12">
               <h3 className="text-2xl font-bold mb-6">Qual vai ser a moeda?</h3>
-              <div className="relative inline-block">
-                <Button
-                  variant="outline"
-                  className="border-2 rounded-full px-6 py-2 font-medium flex items-center"
-                  onClick={() =>
-                    setSelectedCurrency(
-                      selectedCurrency === "USD" ? "BRL" : "USD"
-                    )
-                  }
+              <div className="flex gap-4">
+                <div
+                  className={`border rounded-xl p-5 cursor-pointer flex-1 ${
+                    selectedCurrency === "BRL"
+                      ? "border-indigo-600 bg-indigo-50"
+                      : "border-gray-200"
+                  }`}
+                  onClick={() => setSelectedCurrency("BRL")}
                 >
-                  {selectedCurrency === "USD" ? "USD" : "R$"}
-                  <svg
-                    className="ml-2 h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </Button>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                        selectedCurrency === "BRL" ? "border-indigo-600" : ""
+                      }`}
+                    >
+                      {selectedCurrency === "BRL" && (
+                        <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Real brasileiro</h4>
+                      <p className="text-sm text-gray-500">BRL – R$</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className={`border rounded-xl p-5 cursor-pointer flex-1 ${
+                    selectedCurrency === "USD"
+                      ? "border-indigo-600 bg-indigo-50"
+                      : "border-gray-200"
+                  }`}
+                  onClick={() => setSelectedCurrency("USD")}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                        selectedCurrency === "USD" ? "border-indigo-600" : ""
+                      }`}
+                    >
+                      {selectedCurrency === "USD" && (
+                        <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Dólar americano</h4>
+                      <p className="text-sm text-gray-500">USD – $</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1188,395 +889,579 @@ export default function BudgetCompleteForm({
       case 3:
         return (
           <div className="mb-12">
-            {budgetPhases.map((phase, index) => (
-              <div
-                key={phase.id}
-                className="mb-8 bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow duration-200"
-              >
-                {/* Cabeçalho da fase */}
-                <div className="border-b bg-gray-50 p-6 rounded-t-xl">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-indigo-100 rounded-lg p-2 w-10 h-10 flex items-center justify-center">
-                        <span className="text-indigo-600 font-semibold">
-                          {index + 1}
-                        </span>
-                      </div>
-                      <div>
-                        <h2
-                          className="text-lg font-bold truncate max-w-[200px]"
-                          title={`Fase: ${phase.name}`}
-                        >
-                          {phase.name}
-                        </h2>
-                        <p className="text-gray-500 text-sm">
-                          {phase.description}
-                        </p>
-                      </div>
-                    </div>
+            <h2 className="text-3xl font-bold mb-6">
+              Adicione as categorias do seu orçamento
+            </h2>
 
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border">
-                        <span className="text-gray-600">Valor base</span>
-                        <span className="text-red-500 font-medium">
-                          R$ {phase.baseValue}/h
-                        </span>
-                      </div>
-                      <button
-                        className="text-gray-500 hover:text-gray-700 relative options-menu p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                        onClick={(e) => handleOptionsClick(phase.id, e)}
-                      >
-                        <MoreVertical className="h-5 w-5" />
-                        {showOptionsMenu === phase.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
-                            <button
-                              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
-                              onClick={() => {
-                                setCurrentPhaseForSegment(phase.id);
-                                setShowSegmentModal(true);
-                                setShowOptionsMenu(null);
-                              }}
-                            >
-                              <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                              >
-                                <path
-                                  d="M12 5V19"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                                <path
-                                  d="M5 12H19"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                              Criar segmento
-                            </button>
-                            <button
-                              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
-                              onClick={() => handleOpenActivityModal(phase.id)}
-                            >
-                              <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                              >
-                                <path
-                                  d="M12 5V19"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                                <path
-                                  d="M5 12H19"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                              Adicionar atividade
-                            </button>
-                          </div>
-                        )}
-                      </button>
-                    </div>
-                  </div>
+            {/* Botões de categorias padrão */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-4">
+                Categorias sugeridas
+              </h3>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleAddPhase("Proposta")}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                >
+                  Proposta
+                </button>
+                <button
+                  onClick={() => handleAddPhase("Estudo preliminar")}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                >
+                  Estudo preliminar
+                </button>
+                <button
+                  onClick={() => handleAddPhase("Projeto executivo")}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                >
+                  Projeto executivo
+                </button>
+                <button
+                  onClick={() => handleAddPhase("Acompanhamento de obra")}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                >
+                  Acompanhamento de obra
+                </button>
+                <button
+                  onClick={() => handleAddPhase("Avaliação final")}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                >
+                  Avaliação final
+                </button>
+                <button
+                  onClick={() => setShowPhaseModal(true)}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                >
+                  + Adicionar categoria
+                </button>
+              </div>
+            </div>
+
+            {/* Lista de fases */}
+            {budgetPhases.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <div className="mb-4">
+                  <svg
+                    className="mx-auto h-12 w-12 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
                 </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Nenhuma categoria adicionada
+                </h3>
+                <p className="text-gray-500">
+                  Clique em Adicionar categoria; para começar a criar seu
+                  orçamento.
+                </p>
+              </div>
+            ) : (
+              budgetPhases.map((phase, index) => (
+                <div
+                  key={phase.id}
+                  className="mb-8 bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow duration-200"
+                >
+                  {/* Cabeçalho da fase */}
+                  <div className="border-b bg-gray-50 p-6 rounded-t-xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-indigo-100 rounded-lg p-2 w-10 h-10 flex items-center justify-center">
+                          <span className="text-indigo-600 font-semibold">
+                            {index + 1}
+                          </span>
+                        </div>
+                        <div>
+                          <h2
+                            className="text-lg font-bold truncate max-w-[200px]"
+                            title={`Fase: ${phase.name}`}
+                          >
+                            {phase.name}
+                          </h2>
+                          <p className="text-gray-500 text-sm">
+                            {phase.description}
+                          </p>
+                        </div>
+                      </div>
 
-                <div className="p-6">
-                  {/* Conteúdo da fase */}
-                  {phase.segments ? (
-                    // Renderiza os segmentos se existirem (Estudo preliminar)
-                    <>
-                      {phase.segments.map((segment) => (
-                        <div key={segment.id} className="mb-8">
-                          <div className="flex items-center justify-between mb-4">
-                            <div>
-                              <h3 className="text-xl font-bold">
-                                {segment.name}
-                              </h3>
-                              <p className="text-gray-500 text-sm">
-                                {segment.description}
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              {/* <button className="border border-emerald-500 text-emerald-500 px-4 py-2 rounded-lg flex items-center gap-2">
-                                <svg
-                                  width="20"
-                                  height="20"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                >
-                                  <path
-                                    d="M16 16L12 12M12 12L8 8M12 12L16 8M12 12L8 16"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                </svg>
-                                Duplicar
-                              </button> */}
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border">
+                          <span className="text-gray-600">Valor base</span>
+                          <span className="text-red-500 font-medium">
+                            {formatCurrency(calculatePhaseBaseValue(phase))}/h
+                          </span>
+                        </div>
+                        <button
+                          className="text-gray-500 hover:text-gray-700 relative options-menu p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          onClick={(e) => handleOptionsClick(phase.id, e)}
+                        >
+                          <MoreVertical className="h-5 w-5" />
+                          {showOptionsMenu === phase.id && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
                               <button
-                                className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                                onClick={() =>
-                                  handleOpenActivityModal(phase.id, segment.id)
-                                }
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
+                                onClick={() => {
+                                  setCurrentPhaseForSegment(phase.id);
+                                  setShowSegmentModal(true);
+                                  setShowOptionsMenu(null);
+                                }}
                               >
                                 <svg
-                                  width="20"
-                                  height="20"
+                                  width="16"
+                                  height="16"
                                   viewBox="0 0 24 24"
                                   fill="none"
                                 >
                                   <path
                                     d="M12 5V19"
-                                    stroke="white"
+                                    stroke="currentColor"
                                     strokeWidth="2"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                   />
                                   <path
                                     d="M5 12H19"
-                                    stroke="white"
+                                    stroke="currentColor"
                                     strokeWidth="2"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                   />
                                 </svg>
-                                Adicionar no segmento
+                                Criar segmento
+                              </button>
+                              <button
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
+                                onClick={() =>
+                                  handleOpenActivityModal(phase.id)
+                                }
+                              >
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                >
+                                  <path
+                                    d="M12 5V19"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                  <path
+                                    d="M5 12H19"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                                Adicionar atividade
+                              </button>
+                              <div className="border-t border-gray-200"></div>
+                              <button
+                                className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2"
+                                onClick={() => handleRemovePhase(phase.id)}
+                              >
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                >
+                                  <path
+                                    d="M3 6H5H21"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                  <path
+                                    d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                                Remover categoria
                               </button>
                             </div>
-                          </div>
-
-                          <div className="bg-white rounded-lg border">
-                            <div className="grid grid-cols-7 gap-4 p-4 border-b bg-gray-50">
-                              <div className="col-span-2">Nome</div>
-                              <div className="text-center">
-                                Tempo para desenvolver
-                              </div>
-                              <div className="text-center">Custo hora</div>
-                              <div className="text-center">Custo Total</div>
-                              <div className="text-center">Complexidade</div>
-                              <div className="text-center">Editar</div>
-                            </div>
-
-                            {segment.activities.map((activity) => (
-                              <div
-                                key={activity.id}
-                                className="grid grid-cols-7 gap-4 p-4 border-b items-center"
-                              >
-                                <div className="col-span-2">
-                                  <p className="font-medium">{activity.name}</p>
-                                  <p className="text-sm text-gray-500">
-                                    {activity.description}
-                                  </p>
-                                </div>
-                                <div className="text-center">
-                                  {activity.time}h
-                                </div>
-                                <div className="text-center">
-                                  R$ {activity.costPerHour}
-                                </div>
-                                <div className="text-center">
-                                  R$ {activity.totalCost}
-                                </div>
-                                <div className="text-center">
-                                  {activity.complexity}
-                                </div>
-                                <div className="flex justify-center gap-2">
-                                  <button className="text-red-500">
-                                    <svg
-                                      width="20"
-                                      height="20"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                    >
-                                      <path
-                                        d="M3 6H5H21"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      />
-                                      <path
-                                        d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      />
-                                    </svg>
-                                  </button>
-                                  <button className="text-indigo-600">
-                                    <svg
-                                      width="20"
-                                      height="20"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                    >
-                                      <path
-                                        d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      />
-                                      <path
-                                        d="M18.5 2.49998C18.8978 2.10216 19.4374 1.87866 20 1.87866C20.5626 1.87866 21.1022 2.10216 21.5 2.49998C21.8978 2.89781 22.1213 3.43737 22.1213 3.99998C22.1213 4.56259 21.8978 5.10216 21.5 5.49998L12 15L8 16L9 12L18.5 2.49998Z"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      />
-                                    </svg>
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    // Renderiza a lista normal de atividades (Proposta)
-                    <div className="bg-white rounded-lg border">
-                      <div className="grid grid-cols-7 gap-4 p-4 border-b bg-gray-50">
-                        <div className="col-span-2">Nome</div>
-                        <div className="text-center">
-                          Tempo para desenvolver
-                        </div>
-                        <div className="text-center">Custo hora</div>
-                        <div className="text-center">Custo Total</div>
-                        <div className="text-center">Complexidade</div>
-                        <div className="text-center">Editar</div>
-                      </div>
-
-                      {phase.activities.map((activity) => (
-                        <div
-                          key={activity.id}
-                          className="grid grid-cols-7 gap-4 p-4 border-b items-center"
-                        >
-                          <div className="col-span-2">
-                            <p className="font-medium">{activity.name}</p>
-                            <p className="text-sm text-gray-500">
-                              {activity.description}
-                            </p>
-                          </div>
-                          <div className="text-center">{activity.time}h</div>
-                          <div className="text-center">
-                            R$ {activity.costPerHour}
-                          </div>
-                          <div className="text-center">
-                            R$ {activity.totalCost}
-                          </div>
-                          <div className="text-center">
-                            {activity.complexity}
-                          </div>
-                          <div className="flex justify-center gap-2">
-                            <button className="text-red-500">
-                              <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                              >
-                                <path
-                                  d="M3 6H5H21"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                                <path
-                                  d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </button>
-                            <button className="text-indigo-600">
-                              <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                              >
-                                <path
-                                  d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                                <path
-                                  d="M18.5 2.49998C18.8978 2.10216 19.4374 1.87866 20 1.87866C20.5626 1.87866 21.1022 2.10216 21.5 2.49998C21.8978 2.89781 22.1213 3.43737 22.1213 3.99998C22.1213 4.56259 21.8978 5.10216 21.5 5.49998L12 15L8 16L9 12L18.5 2.49998Z"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Margem de lucro e totais */}
-                  <div className="mt-8 pt-8 border-t">
-                    <div className="flex items-center gap-4 mb-4">
-                      <h3 className="text-xl font-bold">Margem de lucro</h3>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          className="border rounded-lg px-4 py-2 w-[200px] pl-8"
-                          placeholder="Porcentagem"
-                        />
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                          %
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-8">
-                      <div>
-                        <p className="text-gray-600 mb-2">Custo total</p>
-                        <div className="bg-gray-50 border rounded-lg px-4 py-2 flex items-center gap-2">
-                          <span className="text-gray-400">$</span>
-                          <span className="text-indigo-600 font-medium">
-                            400 Reais
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-gray-600 mb-2">Total lucrando</p>
-                        <div className="bg-gray-50 border rounded-lg px-4 py-2 flex items-center gap-2">
-                          <span className="text-gray-400">$</span>
-                          <span className="text-indigo-600 font-medium">
-                            400 Reais
-                          </span>
-                        </div>
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>
+
+                  <div className="p-6">
+                    {/* Conteúdo da fase */}
+                    {phase.segments ? (
+                      // Renderiza os segmentos se existirem
+                      <>
+                        {phase.segments.map((segment) => (
+                          <div key={segment.id} className="mb-8">
+                            <div className="flex items-center justify-between mb-4">
+                              <div>
+                                <h3 className="text-xl font-bold">
+                                  {segment.name}
+                                </h3>
+                                <p className="text-gray-500 text-sm">
+                                  {segment.description}
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                                  onClick={() =>
+                                    handleOpenActivityModal(
+                                      phase.id,
+                                      segment.id
+                                    )
+                                  }
+                                >
+                                  <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                  >
+                                    <path
+                                      d="M12 5V19"
+                                      stroke="white"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                    <path
+                                      d="M5 12H19"
+                                      stroke="white"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                  Adicionar no segmento
+                                </button>
+                                <button
+                                  className="text-gray-500 hover:text-gray-700 relative segment-options-menu p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                  onClick={(e) =>
+                                    handleSegmentOptionsClick(segment.id, e)
+                                  }
+                                >
+                                  <MoreVertical className="h-5 w-5" />
+                                  {showSegmentOptionsMenu === segment.id && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
+                                      <button
+                                        className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2"
+                                        onClick={() =>
+                                          handleRemoveSegment(
+                                            phase.id,
+                                            segment.id
+                                          )
+                                        }
+                                      >
+                                        <svg
+                                          width="16"
+                                          height="16"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                        >
+                                          <path
+                                            d="M3 6H5H21"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          />
+                                          <path
+                                            d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          />
+                                        </svg>
+                                        Remover segmento
+                                      </button>
+                                    </div>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="bg-white rounded-lg border">
+                              <div className="grid grid-cols-7 gap-4 p-4 border-b bg-gray-50">
+                                <div className="col-span-2">Nome</div>
+                                <div className="text-center">
+                                  Tempo para desenvolver
+                                </div>
+                                <div className="text-center">Custo hora</div>
+                                <div className="text-center">Custo Total</div>
+                                <div className="text-center">Complexidade</div>
+                                <div className="text-center">Editar</div>
+                              </div>
+
+                              {segment.activities.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                  Nenhuma atividade adicionada neste segmento.
+                                </div>
+                              ) : (
+                                segment.activities.map((activity) => (
+                                  <div
+                                    key={activity.id}
+                                    className="grid grid-cols-7 gap-4 p-4 border-b items-center"
+                                  >
+                                    <div className="col-span-2">
+                                      <p className="font-medium">
+                                        {activity.name}
+                                      </p>
+                                      <p className="text-sm text-gray-500">
+                                        {activity.description}
+                                      </p>
+                                    </div>
+                                    <div className="text-center">
+                                      {activity.time}h
+                                    </div>
+                                    <div className="text-center">
+                                      {formatCurrency(activity.costPerHour)}
+                                    </div>
+                                    <div className="text-center">
+                                      {formatCurrency(activity.totalCost)}
+                                    </div>
+                                    <div className="text-center">
+                                      {activity.complexity}
+                                    </div>
+                                    <div className="flex justify-center gap-2">
+                                      <button className="text-red-500">
+                                        <svg
+                                          width="20"
+                                          height="20"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                        >
+                                          <path
+                                            d="M3 6H5H21"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          />
+                                          <path
+                                            d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          />
+                                        </svg>
+                                      </button>
+                                      <button className="text-indigo-600">
+                                        <svg
+                                          width="20"
+                                          height="20"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                        >
+                                          <path
+                                            d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          />
+                                          <path
+                                            d="M18.5 2.49998C18.8978 2.10216 19.4374 1.87866 20 1.87866C20.5626 1.87866 21.1022 2.10216 21.5 2.49998C21.8978 2.89781 22.1213 3.43737 22.1213 3.99998C22.1213 4.56259 21.8978 5.10216 21.5 5.49998L12 15L8 16L9 12L18.5 2.49998Z"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      // Renderiza a lista normal de atividades
+                      <div className="bg-white rounded-lg border">
+                        <div className="grid grid-cols-7 gap-4 p-4 border-b bg-gray-50">
+                          <div className="col-span-2">Nome</div>
+                          <div className="text-center">
+                            Tempo para desenvolver
+                          </div>
+                          <div className="text-center">Custo hora</div>
+                          <div className="text-center">Custo Total</div>
+                          <div className="text-center">Complexidade</div>
+                          <div className="text-center">Editar</div>
+                        </div>
+
+                        {phase.activities.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            Nenhuma atividade adicionada nesta categoria.
+                          </div>
+                        ) : (
+                          phase.activities.map((activity) => (
+                            <div
+                              key={activity.id}
+                              className="grid grid-cols-7 gap-4 p-4 border-b items-center"
+                            >
+                              <div className="col-span-2">
+                                <p className="font-medium">{activity.name}</p>
+                                <p className="text-sm text-gray-500">
+                                  {activity.description}
+                                </p>
+                              </div>
+                              <div className="text-center">
+                                {activity.time}h
+                              </div>
+                              <div className="text-center">
+                                {formatCurrency(activity.costPerHour)}
+                              </div>
+                              <div className="text-center">
+                                {formatCurrency(activity.totalCost)}
+                              </div>
+                              <div className="text-center">
+                                {activity.complexity}
+                              </div>
+                              <div className="flex justify-center gap-2">
+                                <button className="text-red-500">
+                                  <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                  >
+                                    <path
+                                      d="M3 6H5H21"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                    <path
+                                      d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                </button>
+                                <button className="text-indigo-600">
+                                  <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                  >
+                                    <path
+                                      d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                    <path
+                                      d="M18.5 2.49998C18.8978 2.10216 19.4374 1.87866 20 1.87866C20.5626 1.87866 21.1022 2.10216 21.5 2.49998C21.8978 2.89781 22.1213 3.43737 22.1213 3.99998C22.1213 4.56259 21.8978 5.10216 21.5 5.49998L12 15L8 16L9 12L18.5 2.49998Z"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                    {/* Margem de lucro e totais */}
+                    {profitConfig === "category" && (
+                      <div className="mt-8 pt-8 border-t">
+                        <div className="flex items-center gap-4 mb-4">
+                          <h3 className="text-xl font-bold">Margem de lucro</h3>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              className="border rounded-lg px-4 py-2 w-[200px] pl-8"
+                              placeholder="Porcentagem"
+                            />
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2">
+                              %
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-8">
+                          <div>
+                            <p className="text-gray-600 mb-2">Custo total</p>
+                            <div className="bg-gray-50 border rounded-lg px-4 py-2 flex items-center gap-2">
+                              <span className="text-gray-400">
+                                {getCurrencySymbol()}
+                              </span>
+                              <span className="text-indigo-600 font-medium">
+                                {phase.activities.reduce(
+                                  (sum, activity) => sum + activity.totalCost,
+                                  0
+                                ) +
+                                  (phase.segments?.reduce(
+                                    (segSum, segment) =>
+                                      segSum +
+                                      segment.activities.reduce(
+                                        (actSum, activity) =>
+                                          actSum + activity.totalCost,
+                                        0
+                                      ),
+                                    0
+                                  ) || 0)}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-gray-600 mb-2">Total lucrando</p>
+                            <div className="bg-gray-50 border rounded-lg px-4 py-2 flex items-center gap-2">
+                              <span className="text-gray-400">
+                                {getCurrencySymbol()}
+                              </span>
+                              <span className="text-indigo-600 font-medium">
+                                {phase.activities.reduce(
+                                  (sum, activity) => sum + activity.totalCost,
+                                  0
+                                ) +
+                                  (phase.segments?.reduce(
+                                    (segSum, segment) =>
+                                      segSum +
+                                      segment.activities.reduce(
+                                        (actSum, activity) =>
+                                          actSum + activity.totalCost,
+                                        0
+                                      ),
+                                    0
+                                  ) || 0)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
 
             {/* Seção de categorias personalizadas */}
             <div className="mt-8">
@@ -1793,9 +1678,9 @@ export default function BudgetCompleteForm({
                 <div className="flex items-center gap-2">
                   <span className="text-gray-600">Total adicional</span>
                   <div className="bg-gray-50 border rounded-lg px-4 py-2 flex items-center gap-2">
-                    <span className="text-gray-400">R$</span>
+                    <span className="text-gray-400">{getCurrencySymbol()}</span>
                     <span className="text-indigo-600 font-medium">
-                      {calculateWetAreaAdditional()} Reais
+                      {formatCurrency(calculateWetAreaAdditional())}
                     </span>
                   </div>
                 </div>
@@ -1863,9 +1748,9 @@ export default function BudgetCompleteForm({
                 <div className="flex items-center gap-2">
                   <span className="text-gray-600">Total adicional</span>
                   <div className="bg-gray-50 border rounded-lg px-4 py-2 flex items-center gap-2">
-                    <span className="text-gray-400">$</span>
+                    <span className="text-gray-400">{getCurrencySymbol()}</span>
                     <span className="text-indigo-600 font-medium">
-                      400 Reais
+                      {formatCurrency(400)}
                     </span>
                   </div>
                 </div>
@@ -1903,7 +1788,7 @@ export default function BudgetCompleteForm({
                     </h3>
                   </div>
                   <div className="text-3xl font-bold text-gray-900">
-                    R$ 2.600
+                    {formatCurrency(2600)}
                   </div>
                 </div>
 
@@ -1928,36 +1813,38 @@ export default function BudgetCompleteForm({
                     </h3>
                   </div>
                   <div className="text-3xl font-bold text-gray-900">
-                    R$ 4.000
+                    {formatCurrency(4000)}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Margem de lucro */}
-            <div className="mb-8">
-              <div className="flex items-center gap-8">
-                <div>
-                  <h2 className="text-xl font-bold mb-2">Margem de lucro</h2>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      className="border rounded-lg px-3 py-2 pl-8 w-[200px]"
-                      placeholder="Porcentagem"
-                    />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                      %
-                    </span>
+            {profitConfig === "final" && (
+              <div className="mb-8">
+                <div className="flex items-center gap-8">
+                  <div>
+                    <h2 className="text-xl font-bold mb-2">Margem de lucro</h2>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        className="border rounded-lg px-3 py-2 pl-8 w-[200px]"
+                        placeholder="Porcentagem"
+                      />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2">
+                        %
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <img
-                  src={LimifyLucroPuppet.src}
-                  alt="Limify Lucro"
-                  className="w-[200px] h-[200px] object-contain"
-                />
+                  <img
+                    src={LimifyLucroPuppet.src}
+                    alt="Limify Lucro"
+                    className="w-[200px] h-[200px] object-contain"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Ajuste de valores (Opcional) */}
             <div className="mb-8">
@@ -2117,7 +2004,9 @@ export default function BudgetCompleteForm({
               <div className="grid grid-cols-2 gap-8 mt-8">
                 <div>
                   <h3 className="text-lg font-medium mb-2">Preço médio m²</h3>
-                  <div className="text-3xl font-bold text-gray-900">R$ 166</div>
+                  <div className="text-3xl font-bold text-gray-900">
+                    {formatCurrency(166)}
+                  </div>
                 </div>
 
                 <div className="bg-indigo-50 rounded-xl p-6">
@@ -2125,9 +2014,11 @@ export default function BudgetCompleteForm({
                     Valor final do orçamento
                   </h3>
                   <div className="text-3xl font-bold text-gray-900">
-                    R$ 2.600
+                    {formatCurrency(2600)}
                   </div>
-                  <p className="text-sm text-gray-500">Desconto: xxxxx R$</p>
+                  <p className="text-sm text-gray-500">
+                    Desconto: xxxxx {getCurrencySymbol()}
+                  </p>
                 </div>
               </div>
             </div>
@@ -2153,7 +2044,7 @@ export default function BudgetCompleteForm({
         phases: budgetPhases.map((phase) => ({
           name: phase.name,
           description: phase.description,
-          baseValue: phase.baseValue,
+          baseValue: calculatePhaseBaseValue(phase),
           segments: phase.segments?.map((segment) => ({
             name: segment.name,
             description: segment.description,
@@ -2513,6 +2404,61 @@ export default function BudgetCompleteForm({
     }
   };
 
+  // Função para calcular o valor base de uma fase
+  const calculatePhaseBaseValue = (phase: Phase) => {
+    const allActivities = [
+      ...phase.activities,
+      ...(phase.segments?.flatMap((segment) => segment.activities) || []),
+    ];
+
+    if (allActivities.length === 0) return 0;
+
+    const totalCostPerHour = allActivities.reduce(
+      (sum, activity) => sum + activity.costPerHour,
+      0
+    );
+    return Math.round(totalCostPerHour / allActivities.length);
+  };
+
+  // Função para remover uma fase/categoria
+  const handleRemovePhase = (phaseId: number) => {
+    setBudgetPhases((prevPhases) =>
+      prevPhases.filter((phase) => phase.id !== phaseId)
+    );
+    setShowOptionsMenu(null);
+  };
+
+  // Função para remover um segmento
+  const handleRemoveSegment = (phaseId: number, segmentId: number) => {
+    setBudgetPhases((prevPhases) =>
+      prevPhases.map((phase) => {
+        if (phase.id === phaseId && phase.segments) {
+          return {
+            ...phase,
+            segments: phase.segments.filter(
+              (segment) => segment.id !== segmentId
+            ),
+          };
+        }
+        return phase;
+      })
+    );
+  };
+
+  // Função para formatar a moeda baseada na seleção
+  const formatCurrency = (value: number) => {
+    if (selectedCurrency === "USD") {
+      return `$${value}`;
+    } else {
+      return `R$ ${value}`;
+    }
+  };
+
+  // Função para obter o símbolo da moeda
+  const getCurrencySymbol = () => {
+    return selectedCurrency === "USD" ? "$" : "R$";
+  };
+
   return (
     <>
       <div className="max-w-3xl mx-auto w-full py-6">
@@ -2851,7 +2797,10 @@ export default function BudgetCompleteForm({
                           Valor base sugerido:
                         </span>
                         <div className="text-2xl font-bold text-purple-700">
-                          R$ {aiGeneratedData?.suggestedBaseValue || "N/A"}/h
+                          {formatCurrency(
+                            aiGeneratedData?.suggestedBaseValue || 0
+                          )}
+                          /h
                         </div>
                       </div>
                       <div>

@@ -14,6 +14,7 @@ import {
   Settings,
   CreditCard,
   LineChart,
+  Shield,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProgressRing } from "./progress-ring";

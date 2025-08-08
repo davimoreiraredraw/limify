@@ -478,3 +478,21 @@ export const portfolioBrand = pgTable("portfolio_brand", {
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
+
+// Tabela para valores da Sinduscon por estado
+export const sindusconValues = pgTable("sinduscon_values", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  estado: text("estado").notNull(),
+  r1: decimal("r1", { precision: 10, scale: 2 }),
+  pp4: decimal("pp4", { precision: 10, scale: 2 }),
+  r8: decimal("r8", { precision: 10, scale: 2 }),
+  r16: decimal("r16", { precision: 10, scale: 2 }),
+  mes: integer("mes").notNull(), // 1-12
+  ano: integer("ano").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tipos para a tabela de valores da Sinduscon
+export type SindusconValue = InferSelectModel<typeof sindusconValues>;
+export type NewSindusconValue = InferInsertModel<typeof sindusconValues>;

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Archivo } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 
-const inter = Inter({ subsets: ["latin"] });
+const archivo = Archivo({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Limify - Orçamentos de Arquitetura",
@@ -29,7 +29,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/short_logo.png" />
       </head>
-      <body className={inter.className}>
+      <body className={archivo.className}>
         {children}
         <Toaster richColors />
       </body>

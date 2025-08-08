@@ -31,6 +31,7 @@ interface BudgetItem {
   grauComplexidade: "sem" | "baixa" | "media" | "alta";
   total: number;
   exibir: boolean;
+  isEditingField?: "tempoDesenvolvimento" | "quantidadeImagens" | null;
 }
 
 export default function BudgetRenderForm({
@@ -281,6 +282,56 @@ export default function BudgetRenderForm({
   const closeSidebar = () => {
     setIsSidebarOpen(false);
     setEditingItem(null);
+  };
+
+  // Função para atualizar valores inline
+  const updateItemValue = (
+    itemId: string,
+    field: "tempoDesenvolvimento" | "quantidadeImagens",
+    value: number
+  ) => {
+    setBudgetItems((prevItems) =>
+      prevItems.map((item) => {
+        if (item.id === itemId) {
+          const updatedItem = { ...item, [field]: value };
+          // Recalcular total baseado na complexidade e tempo
+          let total = 0;
+          if (updatedItem.grauComplexidade === "sem") {
+            total = updatedItem.tempoDesenvolvimento * 150;
+          } else if (updatedItem.grauComplexidade === "baixa") {
+            total = updatedItem.tempoDesenvolvimento * 200;
+          } else if (updatedItem.grauComplexidade === "media") {
+            total = updatedItem.tempoDesenvolvimento * 300;
+          } else {
+            total = updatedItem.tempoDesenvolvimento * 200;
+          }
+          updatedItem.total = total;
+          return updatedItem;
+        }
+        return item;
+      })
+    );
+  };
+
+  // Função para finalizar edição inline
+  const finishInlineEdit = (itemId: string) => {
+    setBudgetItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === itemId ? { ...item, isEditingField: null } : item
+      )
+    );
+  };
+
+  // Função para iniciar edição de um campo específico
+  const startInlineEdit = (
+    itemId: string,
+    field: "tempoDesenvolvimento" | "quantidadeImagens"
+  ) => {
+    setBudgetItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === itemId ? { ...item, isEditingField: field } : item
+      )
+    );
   };
 
   // Função para gerar sugestão da IA
@@ -771,7 +822,8 @@ export default function BudgetRenderForm({
                 budgetItems.map((item) => (
                   <div
                     key={item.id}
-                    className="grid grid-cols-[2fr,1fr,1fr,1fr,1fr,0.5fr] gap-4 py-6 border-b items-center"
+                    className="grid grid-cols-[2fr,1fr,1fr,1fr,1fr,0.5fr] gap-4 py-6 border-b items-center hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => editItem(item)}
                   >
                     <div>
                       <div className="font-medium">{item.name}</div>
@@ -780,19 +832,95 @@ export default function BudgetRenderForm({
                       </div>
                     </div>
                     <div className="text-right">
-                      {item.tempoDesenvolvimento} dias
+                      {item.isEditingField === "tempoDesenvolvimento" ? (
+                        <div className="relative">
+                          <input
+                            type="number"
+                            className="pr-8 pl-4 py-2 w-full border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-right"
+                            placeholder="0"
+                            value={item.tempoDesenvolvimento || ""}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value) || 0;
+                              updateItemValue(
+                                item.id,
+                                "tempoDesenvolvimento",
+                                value
+                              );
+                            }}
+                            onBlur={() => finishInlineEdit(item.id)}
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter") {
+                                finishInlineEdit(item.id);
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 text-sm">dias</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded text-right"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startInlineEdit(item.id, "tempoDesenvolvimento");
+                          }}
+                        >
+                          {item.tempoDesenvolvimento} dias
+                        </div>
+                      )}
                     </div>
                     <div className="text-right">
-                      {item.quantidadeImagens} imagens
-                    </div>
-                    <div className="text-right">
-                      R$ {item.total / item.quantidadeImagens}
+                      {item.isEditingField === "quantidadeImagens" ? (
+                        <div className="relative">
+                          <input
+                            type="number"
+                            className="pr-8 pl-4 py-2 w-full border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-right"
+                            placeholder="0"
+                            value={item.quantidadeImagens || ""}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value) || 0;
+                              updateItemValue(
+                                item.id,
+                                "quantidadeImagens",
+                                value
+                              );
+                            }}
+                            onBlur={() => finishInlineEdit(item.id)}
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter") {
+                                finishInlineEdit(item.id);
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 text-sm">
+                              imagens
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded text-right"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startInlineEdit(item.id, "quantidadeImagens");
+                          }}
+                        >
+                          {item.quantidadeImagens} imagens
+                        </div>
+                      )}
                     </div>
                     <div className="text-right font-bold">R$ {item.total}</div>
-                    <div className="flex justify-end space-x-3">
+                    <div className="flex justify-end">
                       <button
-                        className="text-red-500"
-                        onClick={() => removeItem(item.id)}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeItem(item.id);
+                        }}
                       >
                         <svg
                           width="18"
@@ -803,25 +931,6 @@ export default function BudgetRenderForm({
                         >
                           <path
                             d="M5.5 1C5.22386 1 5 1.22386 5 1.5C5 1.77614 5.22386 2 5.5 2H9.5C9.77614 2 10 1.77614 10 1.5C10 1.22386 9.77614 1 9.5 1H5.5ZM3 3.5C3 3.22386 3.22386 3 3.5 3H11.5C11.7761 3 12 3.22386 12 3.5C12 3.77614 11.7761 4 11.5 4H3.5C3.22386 4 3 3.77614 3 3.5ZM4.5 5C4.77614 5 5 5.22386 5 5.5V10.5C5 10.7761 4.77614 11 4.5 11C4.22386 11 4 10.7761 4 10.5V5.5C4 5.22386 4.22386 5 4.5 5ZM7.5 5C7.77614 5 8 5.22386 8 5.5V10.5C8 10.7761 7.77614 11 7.5 11C7.22386 11 7 10.7761 7 10.5V5.5C7 5.22386 7.22386 5 7.5 5ZM10.5 5C10.7761 5 11 5.22386 11 5.5V10.5C11 10.7761 10.7761 11 10.5 11C10.2239 11 10 10.7761 10 10.5V5.5C10 5.22386 10.2239 5 10.5 5Z"
-                            fill="currentColor"
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                          ></path>
-                        </svg>
-                      </button>
-                      <button
-                        className="text-indigo-600"
-                        onClick={() => editItem(item)}
-                      >
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 15 15"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M11.8536 1.14645C11.6583 0.951184 11.3417 0.951184 11.1465 1.14645L3.71455 8.57836C3.62459 8.66832 3.55263 8.77461 3.50251 8.89155L2.04044 12.303C1.9599 12.491 2.00189 12.709 2.14646 12.8536C2.29103 12.9981 2.50905 13.0401 2.69697 12.9596L6.10847 11.4975C6.2254 11.4474 6.3317 11.3754 6.42166 11.2855L13.8536 3.85355C14.0488 3.65829 14.0488 3.34171 13.8536 3.14645L11.8536 1.14645ZM4.42166 9.28547L11.5 2.20711L12.7929 3.5L5.71455 10.5784L4.21924 11.2192L3.78081 10.7808L4.42166 9.28547Z"
                             fill="currentColor"
                             fillRule="evenodd"
                             clipRule="evenodd"
@@ -1741,54 +1850,42 @@ export default function BudgetRenderForm({
       sala: {
         name: "Sala",
         description: "Projeto da sala completo conforme solicitado",
-        tempoDesenvolvimento: 2,
-        quantidadeImagens: 2,
+        tempoDesenvolvimento: 0,
+        quantidadeImagens: 0,
         grauComplexidade: "baixa",
       },
       fachada: {
         name: "Fachada",
         description: "Fazer letreiro",
-        tempoDesenvolvimento: 1,
-        quantidadeImagens: 1,
+        tempoDesenvolvimento: 0,
+        quantidadeImagens: 0,
         grauComplexidade: "sem",
       },
       cozinha: {
         name: "Cozinha",
         description: "Refazer a pia",
-        tempoDesenvolvimento: 3,
-        quantidadeImagens: 2,
+        tempoDesenvolvimento: 0,
+        quantidadeImagens: 0,
         grauComplexidade: "media",
       },
       banheiro: {
         name: "Banheiro",
         description: "Reforma completa do banheiro",
-        tempoDesenvolvimento: 2,
-        quantidadeImagens: 2,
+        tempoDesenvolvimento: 0,
+        quantidadeImagens: 0,
         grauComplexidade: "baixa",
       },
       lavanderia: {
         name: "Lavanderia",
         description: "Projeto da lavanderia",
-        tempoDesenvolvimento: 1,
-        quantidadeImagens: 1,
+        tempoDesenvolvimento: 0,
+        quantidadeImagens: 0,
         grauComplexidade: "sem",
       },
     };
 
     const env = defaultEnvironments[environmentType];
     if (env) {
-      // Calcular o total baseado na complexidade e tempo
-      let total = 0;
-      if (env.grauComplexidade === "sem") {
-        total = env.tempoDesenvolvimento * 150;
-      } else if (env.grauComplexidade === "baixa") {
-        total = env.tempoDesenvolvimento * 200;
-      } else if (env.grauComplexidade === "media") {
-        total = env.tempoDesenvolvimento * 300;
-      } else {
-        total = env.tempoDesenvolvimento * 200;
-      }
-
       const newItem: BudgetItem = {
         id: Date.now().toString(),
         name: env.name,
@@ -1796,11 +1893,12 @@ export default function BudgetRenderForm({
         tempoDesenvolvimento: env.tempoDesenvolvimento,
         quantidadeImagens: env.quantidadeImagens,
         grauComplexidade: env.grauComplexidade,
-        total: total,
+        total: 0,
         exibir: true,
+        isEditingField: "tempoDesenvolvimento", // Começa editando o tempo de desenvolvimento
       };
       setBudgetItems([...budgetItems, newItem]);
-      toast.success(`${env.name} adicionado com sucesso!`);
+      toast.success(`${env.name} adicionado! Preencha os valores.`);
     }
   };
 

@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 
 interface BudgetFormStepsProps {
   budgetStep: number;
-  setBudgetStep: Dispatch<SetStateAction<number>>;
+  setBudgetStep: React.Dispatch<React.SetStateAction<number>>;
   selectedBudgetType: string | null;
   finishBudget: () => void;
 }
@@ -27,6 +27,7 @@ interface BudgetItem {
   squareMeters: number;
   total: number;
   exibir: boolean;
+  isEditingField?: "pricePerSquareMeter" | "squareMeters" | null;
 }
 
 export default function BudgetM2Form({
@@ -113,6 +114,8 @@ export default function BudgetM2Form({
   // Estados para o modal de comparação
   const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [aiGeneratedData, setAiGeneratedData] = useState<any>(null);
+
+  // Estado para controlar a exibição da landing page
 
   // Ref para o container de mensagens
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -209,32 +212,22 @@ export default function BudgetM2Form({
       sala: {
         name: "Sala",
         description: "Projeto da sala completo conforme solicitado",
-        pricePerSquareMeter: 150,
-        squareMeters: 10,
       },
       fachada: {
         name: "Fachada",
         description: "Fazer letreiro",
-        pricePerSquareMeter: 150,
-        squareMeters: 2,
       },
       cozinha: {
         name: "Cozinha",
         description: "Refazer a pia",
-        pricePerSquareMeter: 200,
-        squareMeters: 4,
       },
       banheiro: {
         name: "Banheiro",
         description: "Reforma completa do banheiro",
-        pricePerSquareMeter: 180,
-        squareMeters: 6,
       },
       lavanderia: {
         name: "Lavanderia",
         description: "Projeto da lavanderia",
-        pricePerSquareMeter: 120,
-        squareMeters: 8,
       },
     };
 
@@ -245,13 +238,14 @@ export default function BudgetM2Form({
         id: Date.now().toString(),
         name: env.name,
         description: env.description,
-        pricePerSquareMeter: env.pricePerSquareMeter,
-        squareMeters: env.squareMeters,
-        total: env.pricePerSquareMeter * env.squareMeters,
+        pricePerSquareMeter: 0,
+        squareMeters: 0,
+        total: 0,
         exibir: true,
+        isEditingField: "pricePerSquareMeter", // Começa editando o valor por m²
       };
       setBudgetItems([...budgetItems, newItem]);
-      toast.success(`${env.name} adicionado com sucesso!`);
+      toast.success(`${env.name} adicionado! Preencha os valores.`);
     }
   };
 
@@ -438,44 +432,80 @@ export default function BudgetM2Form({
   // Função para enviar orçamento para a API
   const handleSubmitBudget = async () => {
     setIsSubmitting(true);
+
+    // Preparar dados para o preview
+    const previewData = {
+      projectName: projectName,
+      clientName: clientName,
+      projectDescription: projectDescription,
+      totalValue: calculateTotalBudget(),
+      items: budgetItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        pricePerSquareMeter: item.pricePerSquareMeter,
+        squareMeters: item.squareMeters,
+        total: item.total,
+        exibir: item.exibir,
+      })),
+      tipoAmbiente: tipoAmbiente,
+      valorComodos: valorComodos,
+      adicionalValor: opcoesAjusteValor.includes("adicional")
+        ? adicionalValor
+        : 0,
+      desconto: opcoesAjusteValor.includes("desconto") ? desconto : 0,
+      tipoDesconto: tipoDesconto,
+      references: selectedReferences,
+    };
+
     try {
+      // Ainda salvar no banco para quando for publicar
       const payload = {
         name: projectName,
         description: projectDescription,
-        client_id: clientId ? clientId : null,
-        model: tipoAmbiente,
-        budget_type: selectedBudgetType,
+        client_id: clientId,
+        model: "m2",
+        budget_type: tipoAmbiente,
         value_type: valorComodos,
         total: calculateTotalBudget(),
-        average_price_per_m2: calculateAveragePricePerSqm(),
-        discount: opcoesAjusteValor.includes("desconto") ? desconto : 0,
-        discount_type: tipoDesconto,
-        items: budgetItems.map((item) => ({
-          name: item.name,
-          description: item.description,
-          pricePerSquareMeter: item.pricePerSquareMeter,
-          squareMeters: item.squareMeters,
-          total: item.total,
-        })),
+        average_price_per_m2: 0,
+        discount: opcoesAjusteValor.includes("desconto") ? desconto : null,
+        discount_type: opcoesAjusteValor.includes("desconto")
+          ? tipoDesconto
+          : null,
+        items: budgetItems,
         references: selectedReferences,
       };
+
       const res = await fetch("/api/budgets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
+
       if (res.ok && data.success) {
-        toast.success("Orçamento salvo com sucesso!");
-        finishBudget();
+        toast.success("Preview do orçamento gerado com sucesso!");
+
+        // Codificar os dados para passar via URL
+        const encodedData = encodeURIComponent(JSON.stringify(previewData));
+
+        // Redirecionar para a página de preview com os dados
+        window.open(`/orcamento/preview?data=${encodedData}`, "_blank");
       } else {
-        toast.error(data.error || "Erro ao salvar orçamento");
+        toast.error(data.error || "Erro ao gerar preview do orçamento");
       }
     } catch (err) {
-      toast.error("Erro ao salvar orçamento");
+      toast.error("Erro ao gerar preview do orçamento");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Função para publicar o orçamento
+  const handlePublishBudget = () => {
+    toast.success("Orçamento publicado com sucesso!");
+    finishBudget();
   };
 
   const renderStepContent = () => {
@@ -819,7 +849,8 @@ export default function BudgetM2Form({
                 budgetItems.map((item) => (
                   <div
                     key={item.id}
-                    className="grid grid-cols-12 gap-4 py-6 border-b items-center"
+                    className="grid grid-cols-12 gap-4 py-6 border-b items-center hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => editItem(item)}
                   >
                     <div className="col-span-5">
                       <div className="font-medium">{item.name}</div>
@@ -828,18 +859,91 @@ export default function BudgetM2Form({
                       </div>
                     </div>
                     <div className="col-span-2 text-right">
-                      {formatCurrency(item.pricePerSquareMeter)}
+                      {item.isEditingField === "pricePerSquareMeter" ? (
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 text-sm">R$</span>
+                          </div>
+                          <input
+                            type="number"
+                            className="pl-8 pr-4 py-2 w-full border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+                            placeholder="0"
+                            value={item.pricePerSquareMeter || ""}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value) || 0;
+                              updateItemValue(
+                                item.id,
+                                "pricePerSquareMeter",
+                                value
+                              );
+                            }}
+                            onBlur={() => finishInlineEdit(item.id)}
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter") {
+                                finishInlineEdit(item.id);
+                              }
+                            }}
+                            autoFocus
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startInlineEdit(item.id, "pricePerSquareMeter");
+                          }}
+                        >
+                          {formatCurrency(item.pricePerSquareMeter)}
+                        </div>
+                      )}
                     </div>
                     <div className="col-span-2 text-right">
-                      {item.squareMeters} m²
+                      {item.isEditingField === "squareMeters" ? (
+                        <div className="relative">
+                          <input
+                            type="number"
+                            className="pr-8 pl-4 py-2 w-full border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-right"
+                            placeholder="0"
+                            value={item.squareMeters || ""}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value) || 0;
+                              updateItemValue(item.id, "squareMeters", value);
+                            }}
+                            onBlur={() => finishInlineEdit(item.id)}
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter") {
+                                finishInlineEdit(item.id);
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 text-sm">m²</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded text-right"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startInlineEdit(item.id, "squareMeters");
+                          }}
+                        >
+                          {item.squareMeters} m²
+                        </div>
+                      )}
                     </div>
                     <div className="col-span-2 text-right font-bold">
                       {formatCurrency(item.total)}
                     </div>
-                    <div className="col-span-1 flex justify-end space-x-3">
+                    <div className="col-span-1 flex justify-end">
                       <button
-                        className="text-red-500"
-                        onClick={() => removeItem(item.id)}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeItem(item.id);
+                        }}
                       >
                         <svg
                           width="18"
@@ -850,25 +954,6 @@ export default function BudgetM2Form({
                         >
                           <path
                             d="M5.5 1C5.22386 1 5 1.22386 5 1.5C5 1.77614 5.22386 2 5.5 2H9.5C9.77614 2 10 1.77614 10 1.5C10 1.22386 9.77614 1 9.5 1H5.5ZM3 3.5C3 3.22386 3.22386 3 3.5 3H11.5C11.7761 3 12 3.22386 12 3.5C12 3.77614 11.7761 4 11.5 4H3.5C3.22386 4 3 3.77614 3 3.5ZM4.5 5C4.77614 5 5 5.22386 5 5.5V10.5C5 10.7761 4.77614 11 4.5 11C4.22386 11 4 10.7761 4 10.5V5.5C4 5.22386 4.22386 5 4.5 5ZM7.5 5C7.77614 5 8 5.22386 8 5.5V10.5C8 10.7761 7.77614 11 7.5 11C7.22386 11 7 10.7761 7 10.5V5.5C7 5.22386 7.22386 5 7.5 5ZM10.5 5C10.7761 5 11 5.22386 11 5.5V10.5C11 10.7761 10.7761 11 10.5 11C10.2239 11 10 10.7761 10 10.5V5.5C10 5.22386 10.2239 5 10.5 5Z"
-                            fill="currentColor"
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                          ></path>
-                        </svg>
-                      </button>
-                      <button
-                        className="text-indigo-600"
-                        onClick={() => editItem(item)}
-                      >
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 15 15"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M11.8536 1.14645C11.6583 0.951184 11.3417 0.951184 11.1465 1.14645L3.71455 8.57836C3.62459 8.66832 3.55263 8.77461 3.50251 8.89155L2.04044 12.303C1.9599 12.491 2.00189 12.709 2.14646 12.8536C2.29103 12.9981 2.50905 13.0401 2.69697 12.9596L6.10847 11.4975C6.2254 11.4474 6.3317 11.3754 6.42166 11.2855L13.8536 3.85355C14.0488 3.65829 14.0488 3.34171 13.8536 3.14645L11.8536 1.14645ZM4.42166 9.28547L11.5 2.20711L12.7929 3.5L5.71455 10.5784L4.21924 11.2192L3.78081 10.7808L4.42166 9.28547Z"
                             fill="currentColor"
                             fillRule="evenodd"
                             clipRule="evenodd"
@@ -1788,6 +1873,47 @@ export default function BudgetM2Form({
     }
   };
 
+  // Função para atualizar valores inline
+  const updateItemValue = (
+    itemId: string,
+    field: "pricePerSquareMeter" | "squareMeters",
+    value: number
+  ) => {
+    setBudgetItems((prevItems) =>
+      prevItems.map((item) => {
+        if (item.id === itemId) {
+          const updatedItem = { ...item, [field]: value };
+          // Recalcular total
+          updatedItem.total =
+            updatedItem.pricePerSquareMeter * updatedItem.squareMeters;
+          return updatedItem;
+        }
+        return item;
+      })
+    );
+  };
+
+  // Função para finalizar edição inline
+  const finishInlineEdit = (itemId: string) => {
+    setBudgetItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === itemId ? { ...item, isEditingField: null } : item
+      )
+    );
+  };
+
+  // Função para iniciar edição de um campo específico
+  const startInlineEdit = (
+    itemId: string,
+    field: "pricePerSquareMeter" | "squareMeters"
+  ) => {
+    setBudgetItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === itemId ? { ...item, isEditingField: field } : item
+      )
+    );
+  };
+
   return (
     <>
       <div className="max-w-6xl mx-auto w-full py-6 px-6">
@@ -1855,7 +1981,7 @@ export default function BudgetM2Form({
             {isSubmitting
               ? "Salvando..."
               : budgetStep === 4
-              ? "Finalizar"
+              ? "Publicar"
               : "Continuar"}
           </Button>
         </div>
