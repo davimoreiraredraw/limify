@@ -273,8 +273,14 @@ export default function OrcamentosPage() {
         // Distribuir os orçamentos nas colunas
         processedBudgets.forEach((budget) => {
           try {
-            // Por padrão, colocar na coluna GERADO se não especificado
-            const targetColumn = "GERADO";
+            // Determinar a coluna com base no status do orçamento
+            let targetColumn = "GERADO";
+
+            if (budget.status === "aceito") {
+              targetColumn = "FECHADOS";
+            } else if (!budget.status || budget.status === "pendente") {
+              targetColumn = "NÃO FINALIZADO";
+            }
 
             // Verificar se a coluna existe
             if (!updatedColumns[targetColumn]) {
@@ -352,6 +358,12 @@ export default function OrcamentosPage() {
           faturamento: data.faturamento.percentage,
           gastosFixos: data.gastosFixos.percentage,
           lucro: variacaoLucro,
+        });
+      } else {
+        setPercentuais({
+          faturamento: 0,
+          gastosFixos: 0,
+          lucro: 0,
         });
       }
     } catch (error) {

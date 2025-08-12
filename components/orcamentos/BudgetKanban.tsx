@@ -318,7 +318,7 @@ export default function BudgetKanban({
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className="flex-1 rounded-lg border bg-gray-50 p-4 min-h-[350px]"
+                    className="flex-1 rounded-lg border bg-white p-4 min-h-[350px]"
                   >
                     {isLoading ? (
                       <div className="py-10 text-center text-sm text-gray-500">

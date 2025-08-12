@@ -1,18 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import BudgetLandingPage from "@/components/landing/PreviewBudgetLandingPage";
-import { Button } from "@/components/ui/button";
-import {
-  Play,
-  Upload,
-  Settings,
-  Edit3,
-  X,
-  Image as ImageIcon,
-} from "lucide-react";
 import { toast } from "sonner";
-import Image from "next/image";
+
+// Importar os previews específicos
+import BudgetCompletePreview from "@/components/orcamentos/previews/BudgetCompletePreview";
+import BudgetM2Preview from "@/components/orcamentos/previews/BudgetM2Preview";
+import BudgetRenderPreview from "@/components/orcamentos/previews/BudgetRenderPreview";
+import BudgetModelingPreview from "@/components/orcamentos/previews/BudgetModelingPreview";
+
+// Importar componentes compartilhados
+import PreviewHeader from "@/components/orcamentos/previews/shared/PreviewHeader";
+import ConfigModal from "@/components/orcamentos/previews/shared/ConfigModal";
 
 interface BudgetPreviewData {
   budgetId: string;
@@ -20,6 +19,7 @@ interface BudgetPreviewData {
   clientName: string;
   projectDescription: string;
   totalValue: number;
+  tipoOrcamento?: "complete" | "m2" | "render" | "modeling";
   items: Array<{
     id: string;
     name: string;
@@ -59,6 +59,7 @@ export default function OrcamentoPreviewPage() {
   });
   const [showConfigModal, setShowConfigModal] = useState(false);
 
+  // Configurações das seções (mantidas para compatibilidade)
   const [deliverablesConfig, setDeliverablesConfig] = useState({
     title: "O que está incluso",
     description: "Confira abaixo tudo o que está incluso neste projeto:",
@@ -195,6 +196,7 @@ export default function OrcamentoPreviewPage() {
           clientName: "Cliente Exemplo",
           projectDescription: "Descrição do projeto exemplo",
           totalValue: 0,
+          tipoOrcamento: "complete" as const,
           items: [],
           tipoAmbiente: "interior" as const,
           valorComodos: "unico" as const,
@@ -212,6 +214,28 @@ export default function OrcamentoPreviewPage() {
       setIsLoading(false);
     }
   }, []);
+
+  // Função para renderizar o preview correto baseado no tipo de orçamento
+  const renderPreview = () => {
+    if (!budgetData) return null;
+
+    const previewProps = {
+      budgetData,
+      configData,
+    };
+
+    switch (budgetData.tipoOrcamento) {
+      case "m2":
+        return <BudgetM2Preview {...previewProps} />;
+      case "render":
+        return <BudgetRenderPreview {...previewProps} />;
+      case "modeling":
+        return <BudgetModelingPreview {...previewProps} />;
+      case "complete":
+      default:
+        return <BudgetCompletePreview {...previewProps} />;
+    }
+  };
 
   const handlePublish = async () => {
     if (!budgetData) {
@@ -317,6 +341,20 @@ export default function OrcamentoPreviewPage() {
     }
   };
 
+  const handleTitleChange = (value: string) => {
+    setTempConfigData((prev) => ({
+      ...prev,
+      title: value,
+    }));
+  };
+
+  const handleSubtitleChange = (value: string) => {
+    setTempConfigData((prev) => ({
+      ...prev,
+      subtitle: value,
+    }));
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -346,199 +384,27 @@ export default function OrcamentoPreviewPage() {
   return (
     <>
       {/* Header fixo no topo */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between px-6 py-3">
-          {/* Logo e título */}
-          <div className="flex items-center gap-4">
-            <div className="w-8 h-8 flex items-center justify-center">
-              <Image
-                src="/short_logo.png"
-                alt="Limify Logo"
-                width={32}
-                height={32}
-                className="object-contain"
-              />
-            </div>
-            <div>
-              <h1 className="font-semibold text-gray-900">
-                {configData.title}
-              </h1>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Edit3 className="w-3 h-3" />
-                <span>Editar proposta</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Botões de ação */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Prévia
-            </Button>
-
-            <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={handlePublish}
-              disabled={isPublishing}
-            >
-              {isPublishing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Publicando...
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Publicar
-                </>
-              )}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-600 hover:text-gray-900"
-              onClick={handleOpenConfig}
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Configurações
-            </Button>
-          </div>
-        </div>
-      </div>
+      <PreviewHeader
+        configData={configData}
+        isPublishing={isPublishing}
+        onPublish={handlePublish}
+        onOpenConfig={handleOpenConfig}
+      />
 
       {/* Conteúdo principal com margem para o header */}
-      <div className="pt-16">
-        <BudgetLandingPage
-          budgetData={budgetData}
-          configData={configData}
-          showCloseButton={false}
-        />
-      </div>
+      <div className="pt-16 sm:pt-20">{renderPreview()}</div>
 
       {/* Modal de Configurações */}
-      {showConfigModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50"
-            onClick={handleCancelConfig}
-          />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            {/* Header do modal */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">Configurações</h2>
-              <button
-                onClick={handleCancelConfig}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Conteúdo do modal */}
-            <div className="p-6 space-y-6">
-              {/* Editar proposta */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Editar proposta
-                </h3>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Título
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      value={tempConfigData.title}
-                      onChange={(e) =>
-                        setTempConfigData((prev) => ({
-                          ...prev,
-                          title: e.target.value,
-                        }))
-                      }
-                      placeholder="Proposta Comercial: Sérgio Pereira"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Parágrafo
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      value={tempConfigData.subtitle}
-                      onChange={(e) =>
-                        setTempConfigData((prev) => ({
-                          ...prev,
-                          subtitle: e.target.value,
-                        }))
-                      }
-                      placeholder="Preparado por: Estúdio Meza"
-                    />
-                  </div>
-
-                  {/* Upload de imagem */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Upload imagem
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        id="image-upload"
-                      />
-                      <label
-                        htmlFor="image-upload"
-                        className="cursor-pointer flex flex-col items-center gap-2"
-                      >
-                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <ImageIcon className="w-6 h-6 text-gray-400" />
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          <span className="font-medium text-blue-600">
-                            Clique para fazer upload
-                          </span>
-                          <p className="text-xs text-gray-500 mt-1">
-                            PNG, JPG até 10MB
-                          </p>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer do modal */}
-            <div className="flex gap-3 p-6 border-t border-gray-200">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={handleCancelConfig}
-              >
-                Cancelar
-              </Button>
-              <Button
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={handleSaveConfig}
-              >
-                Salvar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfigModal
+        isOpen={showConfigModal}
+        configData={configData}
+        tempConfigData={tempConfigData}
+        onSave={handleSaveConfig}
+        onCancel={handleCancelConfig}
+        onImageUpload={handleImageUpload}
+        onTitleChange={handleTitleChange}
+        onSubtitleChange={handleSubtitleChange}
+      />
     </>
   );
 }

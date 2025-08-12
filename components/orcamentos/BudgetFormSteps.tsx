@@ -516,7 +516,7 @@ export default function BudgetM2Form({
           <div className="mb-12">
             <h3 className="text-xl font-semibold mb-6">Quem é seu cliente?</h3>
 
-            <div className="space-y-4 mb-8">
+            <div className="space-y-4 mb-8 bg-white">
               <div className="border rounded-lg p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="font-medium">Nome do cliente</h4>
@@ -601,7 +601,7 @@ export default function BudgetM2Form({
             </div>
 
             <div>
-              <h3 className="text-xl font-semibold mb-6">
+              <h3 className="text-xl font-semibold mb-6 ">
                 Qual é o nome do projeto?
               </h3>
 
@@ -660,7 +660,7 @@ export default function BudgetM2Form({
                   className={`border rounded-lg p-5 ${
                     tipoAmbiente === "exterior"
                       ? "border-indigo-600 bg-indigo-50"
-                      : ""
+                      : "bg-white"
                   }`}
                   onClick={() => setTipoAmbiente("exterior")}
                 >
@@ -687,7 +687,7 @@ export default function BudgetM2Form({
                   className={`border rounded-lg p-5 ${
                     tipoAmbiente === "interior"
                       ? "border-indigo-600 bg-indigo-50"
-                      : ""
+                      : "bg-white"
                   }`}
                   onClick={() => setTipoAmbiente("interior")}
                 >
@@ -722,7 +722,7 @@ export default function BudgetM2Form({
                   className={`border rounded-lg p-5 ${
                     valorComodos === "unico"
                       ? "border-indigo-600 bg-indigo-50"
-                      : ""
+                      : "bg-white"
                   }`}
                   onClick={() => setValorComodos("unico")}
                 >
@@ -749,7 +749,7 @@ export default function BudgetM2Form({
                   className={`border rounded-lg p-5 ${
                     valorComodos === "individuais"
                       ? "border-indigo-600 bg-indigo-50"
-                      : ""
+                      : "bg-white"
                   }`}
                   onClick={() => setValorComodos("individuais")}
                 >
@@ -850,117 +850,118 @@ export default function BudgetM2Form({
                 budgetItems.map((item) => (
                   <div
                     key={item.id}
-                    className="grid grid-cols-12 gap-4 py-6 border-b items-center hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => editItem(item)}
+                    className="relative border rounded-lg p-4 mb-4 bg-white shadow-sm"
                   >
-                    <div className="col-span-5">
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {item.description}
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      <div className="col-span-5">
+                        <div className="font-medium">{item.name}</div>
+                        <div className="text-sm text-gray-500">
+                          {item.description}
+                        </div>
                       </div>
-                    </div>
-                    <div className="col-span-2 text-right">
-                      {item.isEditingField === "pricePerSquareMeter" ? (
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500 text-sm">R$</span>
+                      <div className="col-span-2 text-right">
+                        {item.isEditingField === "pricePerSquareMeter" ? (
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <span className="text-gray-500 text-sm">R$</span>
+                            </div>
+                            <input
+                              type="number"
+                              className="pl-8 pr-4 py-2 w-full border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+                              placeholder="0"
+                              value={item.pricePerSquareMeter || ""}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value) || 0;
+                                updateItemValue(
+                                  item.id,
+                                  "pricePerSquareMeter",
+                                  value
+                                );
+                              }}
+                              onBlur={() => finishInlineEdit(item.id)}
+                              onKeyPress={(e) => {
+                                if (e.key === "Enter") {
+                                  finishInlineEdit(item.id);
+                                }
+                              }}
+                              autoFocus
+                            />
                           </div>
-                          <input
-                            type="number"
-                            className="pl-8 pr-4 py-2 w-full border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
-                            placeholder="0"
-                            value={item.pricePerSquareMeter || ""}
-                            onChange={(e) => {
-                              const value = parseFloat(e.target.value) || 0;
-                              updateItemValue(
-                                item.id,
-                                "pricePerSquareMeter",
-                                value
-                              );
+                        ) : (
+                          <div
+                            className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startInlineEdit(item.id, "pricePerSquareMeter");
                             }}
-                            onBlur={() => finishInlineEdit(item.id)}
-                            onKeyPress={(e) => {
-                              if (e.key === "Enter") {
-                                finishInlineEdit(item.id);
-                              }
+                          >
+                            {formatCurrency(item.pricePerSquareMeter)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="col-span-2 text-right">
+                        {item.isEditingField === "squareMeters" ? (
+                          <div className="relative">
+                            <input
+                              type="number"
+                              className="pr-8 pl-4 py-2 w-full border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-right"
+                              placeholder="0"
+                              value={item.squareMeters || ""}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value) || 0;
+                                updateItemValue(item.id, "squareMeters", value);
+                              }}
+                              onBlur={() => finishInlineEdit(item.id)}
+                              onKeyPress={(e) => {
+                                if (e.key === "Enter") {
+                                  finishInlineEdit(item.id);
+                                }
+                              }}
+                              autoFocus
+                            />
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                              <span className="text-gray-500 text-sm">m²</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded text-right"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startInlineEdit(item.id, "squareMeters");
                             }}
-                            autoFocus
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded"
+                          >
+                            {item.squareMeters} m²
+                          </div>
+                        )}
+                      </div>
+                      <div className="col-span-2 text-right font-bold">
+                        {formatCurrency(item.total)}
+                      </div>
+                      <div className="col-span-1 flex justify-end">
+                        <button
+                          className="text-red-500 hover:text-red-700 transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
-                            startInlineEdit(item.id, "pricePerSquareMeter");
+                            removeItem(item.id);
                           }}
                         >
-                          {formatCurrency(item.pricePerSquareMeter)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="col-span-2 text-right">
-                      {item.isEditingField === "squareMeters" ? (
-                        <div className="relative">
-                          <input
-                            type="number"
-                            className="pr-8 pl-4 py-2 w-full border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-right"
-                            placeholder="0"
-                            value={item.squareMeters || ""}
-                            onChange={(e) => {
-                              const value = parseFloat(e.target.value) || 0;
-                              updateItemValue(item.id, "squareMeters", value);
-                            }}
-                            onBlur={() => finishInlineEdit(item.id)}
-                            onKeyPress={(e) => {
-                              if (e.key === "Enter") {
-                                finishInlineEdit(item.id);
-                              }
-                            }}
-                            autoFocus
-                          />
-                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500 text-sm">m²</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div
-                          className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded text-right"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startInlineEdit(item.id, "squareMeters");
-                          }}
-                        >
-                          {item.squareMeters} m²
-                        </div>
-                      )}
-                    </div>
-                    <div className="col-span-2 text-right font-bold">
-                      {formatCurrency(item.total)}
-                    </div>
-                    <div className="col-span-1 flex justify-end">
-                      <button
-                        className="text-red-500 hover:text-red-700 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeItem(item.id);
-                        }}
-                      >
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 15 15"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M5.5 1C5.22386 1 5 1.22386 5 1.5C5 1.77614 5.22386 2 5.5 2H9.5C9.77614 2 10 1.77614 10 1.5C10 1.22386 9.77614 1 9.5 1H5.5ZM3 3.5C3 3.22386 3.22386 3 3.5 3H11.5C11.7761 3 12 3.22386 12 3.5C12 3.77614 11.7761 4 11.5 4H3.5C3.22386 4 3 3.77614 3 3.5ZM4.5 5C4.77614 5 5 5.22386 5 5.5V10.5C5 10.7761 4.77614 11 4.5 11C4.22386 11 4 10.7761 4 10.5V5.5C4 5.22386 4.22386 5 4.5 5ZM7.5 5C7.77614 5 8 5.22386 8 5.5V10.5C8 10.7761 7.77614 11 7.5 11C7.22386 11 7 10.7761 7 10.5V5.5C7 5.22386 7.22386 5 7.5 5ZM10.5 5C10.7761 5 11 5.22386 11 5.5V10.5C11 10.7761 10.7761 11 10.5 11C10.2239 11 10 10.7761 10 10.5V5.5C10 5.22386 10.2239 5 10.5 5Z"
-                            fill="currentColor"
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                          ></path>
-                        </svg>
-                      </button>
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 15 15"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M5.5 1C5.22386 1 5 1.22386 5 1.5C5 1.77614 5.22386 2 5.5 2H9.5C9.77614 2 10 1.77614 10 1.5C10 1.22386 9.77614 1 9.5 1H5.5ZM3 3.5C3 3.22386 3.22386 3 3.5 3H11.5C11.7761 3 12 3.22386 12 3.5C12 3.77614 11.7761 4 11.5 4H3.5C3.22386 4 3 3.77614 3 3.5ZM4.5 5C4.77614 5 5 5.22386 5 5.5V10.5C5 10.7761 4.77614 11 4.5 11C4.22386 11 4 10.7761 4 10.5V5.5C4 5.22386 4.22386 5 4.5 5ZM7.5 5C7.77614 5 8 5.22386 8 5.5V10.5C8 10.7761 7.77614 11 7.5 11C7.22386 11 7 10.7761 7 10.5V5.5C7 5.22386 7.22386 5 7.5 5ZM10.5 5C10.7761 5 11 5.22386 11 5.5V10.5C11 10.7761 10.7761 11 10.5 11C10.2239 11 10 10.7761 10 10.5V5.5C10 5.22386 10.2239 5 10.5 5Z"
+                              fill="currentColor"
+                              fillRule="evenodd"
+                              clipRule="evenodd"
+                            ></path>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -1125,7 +1126,7 @@ export default function BudgetM2Form({
 
             {/* Resumo final - layout Figma */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 bg-gray-50 rounded-md">
+              <div className="p-6 bg-gray-50 rounded-md bg-white">
                 <h4 className="text-sm text-gray-500 mb-2">
                   Preço médio do m²
                 </h4>

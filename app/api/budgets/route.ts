@@ -39,8 +39,6 @@ async function getUserId() {
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("Iniciando busca de orçamentos...");
-
     // Obter parâmetros da query
     const { searchParams } = new URL(request.url);
     const statusFilter = searchParams.get("status");
@@ -55,11 +53,8 @@ export async function GET(request: NextRequest) {
       const testQuery = await db
         .select({ count: budgets.id })
         .from(budgets)
+        .where(eq(budgets.user_id, userId))
         .limit(1);
-      console.log(
-        "Conexão com banco de dados OK, resultado de teste:",
-        testQuery
-      );
     } catch (dbError) {
       console.error("Erro na conexão com o banco de dados:", dbError);
       return NextResponse.json(
@@ -83,14 +78,23 @@ export async function GET(request: NextRequest) {
 
     // Aplicar filtro de lixeira
     if (showDeleted) {
-      query = query.where(eq(budgets.is_deleted, true));
+      query = query.where(
+        and(eq(budgets.is_deleted, true), eq(budgets.user_id, userId))
+      );
     } else {
-      query = query.where(eq(budgets.is_deleted, false));
+      query = query.where(
+        and(eq(budgets.is_deleted, false), eq(budgets.user_id, userId))
+      );
     }
 
     // Aplicar filtro de status se fornecido
     if (statusFilter && statusFilter !== "todos") {
-      query = query.where(eq(budgets.status, statusFilter as any));
+      query = query.where(
+        and(
+          eq(budgets.status, statusFilter as any),
+          eq(budgets.user_id, userId)
+        )
+      );
     }
 
     // Executar a query com ordenação
@@ -139,6 +143,7 @@ export async function POST(req: NextRequest) {
   try {
     // Obter o ID do usuário logado
     const userId = await getUserId();
+    console.log("POST - User ID obtido:", userId);
 
     const body = await req.json();
     const {
@@ -173,6 +178,8 @@ export async function POST(req: NextRequest) {
         user_id: userId,
       })
       .returning();
+
+    console.log("Orçamento criado com user_id:", budget.user_id);
 
     // Cria os itens do orçamento
     if (items && Array.isArray(items)) {
@@ -212,6 +219,7 @@ export async function PATCH(req: NextRequest) {
   try {
     // Obter o ID do usuário logado
     const userId = await getUserId();
+    console.log("PATCH - User ID obtido:", userId);
 
     const body = await req.json();
     const { budgetId, status, action } = body;
@@ -230,9 +238,15 @@ export async function PATCH(req: NextRequest) {
       .where(and(eq(budgets.id, budgetId), eq(budgets.user_id, userId)))
       .limit(1);
 
+    console.log("Verificando orçamento do usuário:", {
+      budgetId,
+      userId,
+      found: existingBudget.length > 0,
+    });
+
     if (existingBudget.length === 0) {
       return NextResponse.json(
-        { error: "Orçamento não encontrado" },
+        { error: "Orçamento não encontrado ou não pertence ao usuário" },
         { status: 404 }
       );
     }

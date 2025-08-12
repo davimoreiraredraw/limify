@@ -1154,7 +1154,7 @@ export default function BudgetLandingPage({
   const renderHeader = () => (
     <div
       className={`relative bg-cover bg-center bg-no-repeat overflow-hidden transition-all duration-1000 ease-in-out ${
-        isHeaderCompact ? "h-32" : "h-screen"
+        isHeaderCompact ? "h-24 sm:h-32" : "h-screen"
       }`}
       style={{
         backgroundImage: configData?.headerImage
@@ -1177,8 +1177,8 @@ export default function BudgetLandingPage({
               <h1
                 className={`font-bold mb-2 transition-all duration-1000 ${
                   isHeaderCompact
-                    ? "text-2xl lg:text-3xl"
-                    : "text-4xl lg:text-6xl"
+                    ? "text-xl sm:text-2xl lg:text-3xl"
+                    : "text-2xl sm:text-4xl lg:text-6xl"
                 }`}
               >
                 {configData?.title ||
@@ -1187,8 +1187,8 @@ export default function BudgetLandingPage({
               <p
                 className={`text-gray-200 transition-all duration-1000 ${
                   isHeaderCompact
-                    ? "text-sm lg:text-base"
-                    : "text-xl lg:text-2xl"
+                    ? "text-xs sm:text-sm lg:text-base"
+                    : "text-lg sm:text-xl lg:text-2xl"
                 }`}
               >
                 {configData?.subtitle || "Preparado por: Estúdio Meza"}
@@ -1247,15 +1247,18 @@ export default function BudgetLandingPage({
   const renderMainContent = () => (
     <div
       className={`bg-white transition-all duration-1000 ${
-        isHeaderCompact ? "ml-64" : "ml-0"
+        isHeaderCompact ? "ml-0 lg:ml-64" : "ml-0"
       }`}
     >
-      <div className="max-w-4xl mx-auto p-8 lg:p-12">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-12">
         {/* Overview Section */}
-        <section id="overview" className="space-y-12 mb-20">
+        <section
+          id="overview"
+          className="space-y-8 sm:space-y-12 mb-16 sm:mb-20"
+        >
           {/* Section Title - Opaque */}
-          <div className="mb-8">
-            <div className="text-gray-300 text-sm font-medium tracking-wider uppercase mb-2">
+          <div className="mb-6 sm:mb-8">
+            <div className="text-gray-300 text-xs sm:text-sm font-medium tracking-wider uppercase mb-2">
               {sectionNames.overview}
             </div>
             <div className="w-full h-px bg-gray-200"></div>
@@ -1263,10 +1266,10 @@ export default function BudgetLandingPage({
 
           {/* Welcome Section */}
           <div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
               Bem-vindo à sua nova casa, {budgetData.clientName}!
             </h2>
-            <div className="text-gray-600 space-y-4 text-lg leading-relaxed">
+            <div className="text-gray-600 space-y-3 sm:space-y-4 text-base sm:text-lg leading-relaxed">
               <p>
                 Esta proposta foi desenvolvida especialmente para você, baseada
                 no briefing detalhado que compartilhou conosco. Nosso objetivo é
@@ -1283,52 +1286,55 @@ export default function BudgetLandingPage({
         </section>
 
         {/* Deliverables Section */}
-        <section id="deliverables" className="space-y-12 mb-20">
+        <section
+          id="deliverables"
+          className="space-y-8 sm:space-y-12 mb-16 sm:mb-20"
+        >
           {/* Section Title - Opaque */}
-          <div className="mb-8">
-            <div className="text-gray-300 text-sm font-medium tracking-wider uppercase mb-2">
+          <div className="mb-6 sm:mb-8">
+            <div className="text-gray-300 text-xs sm:text-sm font-medium tracking-wider uppercase mb-2">
               {sectionNames.deliverables}
             </div>
             <div className="w-full h-px bg-gray-200"></div>
           </div>
 
           <div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
               {deliverablesConfig.title}
             </h2>
-            <p className="text-gray-600 mb-8 text-lg">
+            <p className="text-gray-600 mb-6 sm:mb-8 text-base sm:text-lg">
               {deliverablesConfig.description}
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+              <div className="space-y-4 sm:space-y-6">
                 {deliverables
                   .slice(0, Math.ceil(deliverables.length / 2))
                   .map((deliverable) => (
                     <div
                       key={deliverable.id}
-                      className="flex items-start gap-4"
+                      className="flex items-start gap-3 sm:gap-4"
                     >
-                      <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
-                        <Check className="w-4 h-4 text-blue-600" />
+                      <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
                       </div>
-                      <span className="text-gray-700 text-lg">
+                      <span className="text-gray-700 text-base sm:text-lg">
                         {deliverable.title}
                       </span>
                     </div>
                   ))}
               </div>
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {deliverables
                   .slice(Math.ceil(deliverables.length / 2))
                   .map((deliverable) => (
                     <div
                       key={deliverable.id}
-                      className="flex items-start gap-4"
+                      className="flex items-start gap-3 sm:gap-4"
                     >
-                      <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
-                        <Check className="w-4 h-4 text-blue-600" />
+                      <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
                       </div>
-                      <span className="text-gray-700 text-lg">
+                      <span className="text-gray-700 text-base sm:text-lg">
                         {deliverable.title}
                       </span>
                     </div>
@@ -1339,47 +1345,47 @@ export default function BudgetLandingPage({
         </section>
 
         {/* Phases Section */}
-        <section id="phases" className="space-y-12 mb-20">
+        <section id="phases" className="space-y-8 sm:space-y-12 mb-16 sm:mb-20">
           {/* Section Title - Opaque */}
-          <div className="mb-8">
-            <div className="text-gray-300 text-sm font-medium tracking-wider uppercase mb-2">
+          <div className="mb-6 sm:mb-8">
+            <div className="text-gray-300 text-xs sm:text-sm font-medium tracking-wider uppercase mb-2">
               {sectionNames.phases}
             </div>
             <div className="w-full h-px bg-gray-200"></div>
           </div>
 
           <div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
               {phasesConfig.title}
             </h2>
-            <p className="text-gray-600 mb-12 text-lg">
+            <p className="text-gray-600 mb-8 sm:mb-12 text-base sm:text-lg">
               {phasesConfig.description}
             </p>
             <div className="relative">
-              <div className="space-y-16">
+              <div className="space-y-12 sm:space-y-16">
                 {phases.map((phase, index) => (
                   <div
                     key={phase.id}
-                    className="flex items-start gap-8 relative"
+                    className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-8 relative"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <div className="w-4 h-4 bg-blue-500 rounded-full flex-shrink-0 z-10 relative"></div>
                       <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-sm font-medium">
                         Fase {index + 1}
                       </div>
                     </div>
-                    <div className="flex-1 pt-0">
-                      <h3 className="text-3xl font-bold text-gray-900 mb-4">
+                    <div className="flex-1 pt-0 sm:pt-0">
+                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
                         {phase.title}
                       </h3>
-                      <p className="text-gray-600 text-lg leading-relaxed">
+                      <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
                         {phase.content}
                       </p>
                     </div>
                     {/* Linha conectando para próxima fase - só mostra se não for a última */}
                     {index < phases.length - 1 && (
                       <div
-                        className="absolute left-2 top-2 w-px bg-gray-300 z-0"
+                        className="absolute left-2 top-2 w-px bg-gray-300 z-0 hidden sm:block"
                         style={{ height: "calc(4rem + 8px)" }}
                       ></div>
                     )}
@@ -1391,45 +1397,48 @@ export default function BudgetLandingPage({
         </section>
 
         {/* Investment Section */}
-        <section id="investment" className="space-y-12 mb-20">
+        <section
+          id="investment"
+          className="space-y-8 sm:space-y-12 mb-16 sm:mb-20"
+        >
           {/* Section Title - Opaque */}
-          <div className="mb-8">
-            <div className="text-gray-300 text-sm font-medium tracking-wider uppercase mb-2">
+          <div className="mb-6 sm:mb-8">
+            <div className="text-gray-300 text-xs sm:text-sm font-medium tracking-wider uppercase mb-2">
               {sectionNames.investment}
             </div>
             <div className="w-full h-px bg-gray-200"></div>
           </div>
 
           <div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
               {investmentConfig.title}
             </h2>
-            <p className="text-gray-600 mb-12 text-lg">
+            <p className="text-gray-600 mb-8 sm:mb-12 text-base sm:text-lg">
               {investmentConfig.description}
             </p>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <div className="space-y-8">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-purple-600 font-bold text-lg">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
+              <div className="space-y-6 sm:space-y-8">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-purple-600 font-bold text-base sm:text-lg">
                       R$
                     </span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
                       Valor total do contrato
                     </h3>
-                    <p className="text-2xl font-bold text-gray-900 mb-1">
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
                       {investment.value}
                     </p>
                     <p className="text-gray-500 text-sm">(valor estimado)</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <svg
-                      className="w-6 h-6 text-purple-600"
+                      className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -1443,20 +1452,20 @@ export default function BudgetLandingPage({
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
                       Assinatura do contrato
                     </h3>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 text-sm sm:text-base">
                       Assinatura do contrato (50% do valor) – dá início ao
                       projeto.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <svg
-                      className="w-6 h-6 text-purple-600"
+                      className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -1470,33 +1479,35 @@ export default function BudgetLandingPage({
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
                       Entrega do projeto executivo
                     </h3>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 text-sm sm:text-base">
                       Entrega final (50%) – na entrega do executivo.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+              <div className="bg-gray-50 rounded-xl p-6 sm:p-8">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
                   {investment.title}
                 </h3>
-                <div className="text-4xl font-bold text-gray-900 mb-8 text-center">
+                <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">
                   {investment.value}
                 </div>
-                <div className="space-y-4 mb-8">
+                <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
                   {investment.items.map((item) => (
                     <div key={item.id} className="flex items-center gap-3">
-                      <Check className="w-5 h-5 text-blue-500" />
-                      <span className="text-gray-700">{item.text}</span>
+                      <Check className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
+                      <span className="text-gray-700 text-sm sm:text-base">
+                        {item.text}
+                      </span>
                     </div>
                   ))}
                 </div>
                 <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 text-lg rounded-xl"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 sm:py-4 text-base sm:text-lg rounded-xl"
                   onClick={handlePublish}
                 >
                   Aprovar Proposta
@@ -1507,40 +1518,44 @@ export default function BudgetLandingPage({
         </section>
 
         {/* About Section */}
-        <section id="about" className="space-y-12 mb-20">
+        <section id="about" className="space-y-8 sm:space-y-12 mb-16 sm:mb-20">
           {/* Section Title - Opaque */}
-          <div className="mb-8">
-            <div className="text-gray-300 text-sm font-medium tracking-wider uppercase mb-2">
+          <div className="mb-6 sm:mb-8">
+            <div className="text-gray-300 text-xs sm:text-sm font-medium tracking-wider uppercase mb-2">
               {aboutConfig.title}
             </div>
             <div className="w-full h-px bg-gray-200"></div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8">
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+            <div className="space-y-4 sm:space-y-6">
               {aboutConfig.paragraphs.map((paragraph, index) => (
-                <p key={index} className="text-gray-600">
+                <p key={index} className="text-gray-600 text-sm sm:text-base">
                   {paragraph}
                 </p>
               ))}
 
-              <div className="grid grid-cols-2 gap-6 mt-8">
-                <div className="bg-gray-50 p-6 rounded-xl">
-                  <div className="text-3xl font-bold text-blue-600 mb-2">
+              <div className="grid grid-cols-2 gap-4 sm:gap-6 mt-6 sm:mt-8">
+                <div className="bg-gray-50 p-4 sm:p-6 rounded-xl">
+                  <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">
                     {aboutConfig.yearsOfExperience}+
                   </div>
-                  <div className="text-gray-600">Anos de experiência</div>
+                  <div className="text-gray-600 text-sm sm:text-base">
+                    Anos de experiência
+                  </div>
                 </div>
-                <div className="bg-gray-50 p-6 rounded-xl">
-                  <div className="text-3xl font-bold text-blue-600 mb-2">
+                <div className="bg-gray-50 p-4 sm:p-6 rounded-xl">
+                  <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">
                     {aboutConfig.completedProjects}+
                   </div>
-                  <div className="text-gray-600">Projetos realizados</div>
+                  <div className="text-gray-600 text-sm sm:text-base">
+                    Projetos realizados
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="relative h-[400px] rounded-2xl overflow-hidden">
+            <div className="relative h-[300px] sm:h-[400px] rounded-2xl overflow-hidden">
               {aboutConfig.image ? (
                 <img
                   src={aboutConfig.image}
@@ -1557,29 +1572,29 @@ export default function BudgetLandingPage({
         </section>
 
         {/* Team Section */}
-        <section id="team" className="space-y-12 mb-20">
+        <section id="team" className="space-y-8 sm:space-y-12 mb-16 sm:mb-20">
           {/* Section Title - Opaque */}
-          <div className="mb-8">
-            <div className="text-gray-300 text-sm font-medium tracking-wider uppercase mb-2">
+          <div className="mb-6 sm:mb-8">
+            <div className="text-gray-300 text-xs sm:text-sm font-medium tracking-wider uppercase mb-2">
               {sectionNames.team}
             </div>
             <div className="w-full h-px bg-gray-200"></div>
           </div>
 
           <div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
               {teamConfig.title}
             </h2>
-            <p className="text-gray-600 mb-12 text-lg">
+            <p className="text-gray-600 mb-8 sm:mb-12 text-base sm:text-lg">
               {teamConfig.description}
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {teamMembers.map((member) => (
                 <div
                   key={member.id}
-                  className="text-center bg-gray-50 rounded-xl p-8"
+                  className="text-center bg-gray-50 rounded-xl p-6 sm:p-8"
                 >
-                  <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center rounded-full overflow-hidden">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 sm:mb-6 flex items-center justify-center rounded-full overflow-hidden">
                     {member.image ? (
                       <img
                         src={member.image}
@@ -1590,19 +1605,21 @@ export default function BudgetLandingPage({
                       <div
                         className={`w-full h-full bg-gradient-to-br ${member.bgColor} flex items-center justify-center`}
                       >
-                        <span className="text-3xl font-bold text-white">
+                        <span className="text-2xl sm:text-3xl font-bold text-white">
                           {member.initials}
                         </span>
                       </div>
                     )}
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
                     {member.name}
                   </h3>
-                  <p className="text-blue-600 font-medium mb-4">
+                  <p className="text-blue-600 font-medium mb-3 sm:mb-4 text-sm sm:text-base">
                     {member.role}
                   </p>
-                  <p className="text-gray-600 text-sm">{member.description}</p>
+                  <p className="text-gray-600 text-xs sm:text-sm">
+                    {member.description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -1616,7 +1633,7 @@ export default function BudgetLandingPage({
     <div
       className={`fixed left-0 top-0 h-full w-64 bg-gray-50 border-r border-gray-200 z-30 transition-all duration-1000 transform ${
         isHeaderCompact ? "translate-x-0" : "-translate-x-full"
-      }`}
+      } hidden lg:block`}
     >
       <div className="pt-20 px-6">
         <nav className="space-y-2">
@@ -1668,9 +1685,9 @@ export default function BudgetLandingPage({
       {showCloseButton && (
         <button
           onClick={handleBack}
-          className="fixed top-4 right-4 z-50 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-all duration-300"
+          className="fixed top-4 right-4 z-50 w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-all duration-300"
         >
-          <X className="w-5 h-5 text-gray-600" />
+          <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
         </button>
       )}
 
@@ -1686,27 +1703,29 @@ export default function BudgetLandingPage({
 
           {/* Modal dropdown no canto superior direito */}
           <div
-            className={`fixed top-16 right-6 z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 ${
+            className={`fixed top-16 right-2 sm:right-6 z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 ${
               showSectionConfig === "deliverables" ||
               showSectionConfig === "phases" ||
               showSectionConfig === "investment" ||
               showSectionConfig === "about" ||
               showSectionConfig === "team"
-                ? "w-96 max-h-[80vh]"
-                : "w-80 max-h-[70vh]"
+                ? "w-[calc(100vw-1rem)] sm:w-96 max-h-[80vh]"
+                : "w-[calc(100vw-1rem)] sm:w-80 max-h-[70vh]"
             } overflow-hidden flex flex-col`}
             data-modal="section-config"
           >
             {/* Header com seta */}
             <div className="relative">
-              {/* Seta apontando para cima */}
-              <div className="absolute -top-2 right-6 w-4 h-4 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
+              {/* Seta apontando para cima - só mostra em desktop */}
+              <div className="absolute -top-2 right-6 w-4 h-4 bg-white border-l border-t border-gray-200 transform rotate-45 hidden sm:block"></div>
 
               {/* Header do modal */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
                 <div className="flex items-center gap-2">
                   <Settings className="w-4 h-4 text-gray-500" />
-                  <h3 className="font-semibold text-gray-900">Editar sessão</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
+                    Editar sessão
+                  </h3>
                 </div>
                 <button
                   onClick={handleCancelSectionConfig}
@@ -1718,7 +1737,7 @@ export default function BudgetLandingPage({
             </div>
 
             {/* Conteúdo do modal */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
               {/* Editar nome da sessão */}
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-3">
@@ -2312,7 +2331,7 @@ export default function BudgetLandingPage({
             </div>
 
             {/* Footer do modal - fixo na parte inferior */}
-            <div className="flex gap-2 p-4 border-t border-gray-200 bg-white rounded-b-2xl">
+            <div className="flex gap-2 p-3 sm:p-4 border-t border-gray-200 bg-white rounded-b-2xl">
               <Button
                 variant="outline"
                 size="sm"

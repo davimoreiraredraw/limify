@@ -432,22 +432,22 @@ export default function DespesasPage() {
             }
             className="w-fit"
           >
-            <TabsList className="bg-[#1E1E1E]/10 p-1 rounded-lg">
+            <TabsList className="bg-white p-1 rounded-lg">
               <TabsTrigger
                 value="fixas"
-                className="rounded-md px-4 py-2 text-sm font-medium transition-colors data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm"
+                className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 transition-colors data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
               >
                 Despesas fixas
               </TabsTrigger>
               <TabsTrigger
                 value="pontuais"
-                className="rounded-md px-4 py-2 text-sm font-medium transition-colors data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm"
+                className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 transition-colors data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
               >
                 Despesas pontuais
               </TabsTrigger>
               <TabsTrigger
                 value="lixeira"
-                className="rounded-md px-4 py-2 text-sm font-medium transition-colors data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm"
+                className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 transition-colors data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
               >
                 Lixeira
               </TabsTrigger>
